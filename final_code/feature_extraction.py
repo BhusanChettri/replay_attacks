@@ -24,7 +24,7 @@ import audio
 import dataset
 import model
 import nn_architecture
-import nn_architecture_rus
+import nn_architecture_rus as nn_r
 import nn_architecture_birds as nn_b
 import numpy as np
 

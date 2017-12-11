@@ -458,6 +458,8 @@ def cnnModel4(trainSize, input_placeholder, activation, init, keep_prob1, keep_p
 def cnnModel5(trainSize,input_placeholder,activation,init,targets,fftSize,padding,keep_prob1,keep_prob2,keep_prob3):
     # This is the Exact replication of Russians Paper using Max-Feature-Map activation    
     #(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
+    print('TrainSize input to architecture is: ', trainSize)
+    trainSize = str(trainSize)+'sec'
     
         
     network_weights = list()

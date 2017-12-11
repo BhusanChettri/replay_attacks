@@ -75,13 +75,15 @@ def get_scores_and_features(model_path,batch_size=100, init_type='xavier',activa
     
     mode='testing'
     n_model = None 
+    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
     
     #trainSize=duration
-    inputPath = '../../spectrograms/'+specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+    inputPath = spectrogramPath + specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
     mean_std_file = inputPath+'train/mean_std.npz'
     
     for feat in featType:
-        outputPath = model_path+'/'+feat+'/'
+        outputPath = model_path+'/'+feat+'/'    # Where to save the features ?
+        
         print('Performing ' + feat + ' extraction using trained model on train, dev and eval data')
 
         run_prediction(model_path,feat,'train',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
@@ -99,6 +101,8 @@ def get_scores_and_features(model_path,batch_size=100, init_type='xavier',activa
 #-----------------------------------------------------------------------------------------------------------------
 
 '''
+
+
 model_path = '../models/birdsArch_max2000epochs/_cnnModel2_keepProb_0.6_0.50.5lr0.0003/'
 init_type='xavier'
 activation='elu'

@@ -167,6 +167,8 @@ def cnnModel2(trainSize,input_placeholder,activation,init,targets,fftSize,paddin
     # Replicating the Sparrow architecture of Thomas grill.
     # It uses only conv layers, no FC layer is used here.
     
+    trainSize = str(trainSize) + 'sec'
+    
     # Note: If this architecture works somehow. Then I will have to explore this deeply
     '''
              Filter  Depth, time, Frequency
