@@ -18,11 +18,10 @@ def make_data():
     targets=2
     inputType='mag_spec'
     
-    #/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/mel
-    #/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/mag_spec
-    
+    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+        
     basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
-    outPath = '../../spectrograms/' + inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
+    outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
     print('Preparing the training data')

@@ -130,17 +130,11 @@ def reshape_minibatch(minibatch_data): #, minibatch_labels):
     reshaped_data = np.empty((l,t,f))
     for i in range(l):
         reshaped_data[i] = minibatch_data[i]
-    
-    #print('New 3d shape = ', reshaped_data.shape)
-    
+            
     # Now convert 3d array to 4d array
     reshaped_data = np.expand_dims(reshaped_data, axis=3)
-    #print('New 4d shape = ', reshaped_data.shape)    
-    
-    # Re-arrange binary labels in one-hot 2 dimensional vector form
-    #new_labels = [[1,0] if label == 1 else [0,1] for label in minibatch_labels]
-    
-    return np.asarray(reshaped_data) #, np.asarray(new_labels)
+            
+    return np.asarray(reshaped_data)
 
 #------------------------------------------------------------------------------------------------------------------------------    
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
@@ -165,30 +159,15 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     
 #------------------------------------------------------------------------------------------------------------------------------
 
-def spectrograms(input_type, data_list,savePath,fft_size,win_size,hop_size,duration):
-    
-    from audio import compute_spectrogram              
-    spectrograms = list()
-    print('Computing the spectrograms ..')
-    
-    with open(data_list, 'r') as f:
-        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size, win_size, hop_size, duration) for file in f]         
-    #Save the data as .npz file in savePath
-    makeDirectory(savePath)
-    outfile = savePath+'/spec'
-    with open(outfile,'w') as f:
-        np.savez(outfile, spectrograms=spectrograms)
-        print('Finished computing spectrogram and saved inside: ', savePath)
+
                 
             
 #------------------------------------------------------------------------------------------------------------------------------            
-def load_data(path):
-    
-    specFile = path+'spec.npz'
-    #labelFile= path+'labels.npz'
-        
-    with np.load(specFile) as f:
+def load_data(file):
+            
+    with np.load(file+'spec.npz') as f:
         data = f['spectrograms']
+        
     #with np.load(labelFile) as f:
     #    labels = f['labels']
 
@@ -292,12 +271,28 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targe
         
     if inputType == 'log_fbank':
         #data = 
-        some_function(input_type, audio_list,savePath,fft_size,win_size,hop_size,duration) # todo
-    else:
-        #data = 
-        spectrograms(inputType,audio_list,savePath,fft_size,win_size,hop_size,duration)
+        some_function(input_type, audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration) # todo
+    else:        
+        spectrograms(inputType,audio_list,labelPath, savePath,fft_size,win_size,hop_size,duration)
         
         
+                
+def spectrograms(input_type,data_list,labelPath,savePath,fft_size,win_size,hop_size,duration):
+        
+    from audio import compute_spectrogram              
+    spectrograms = list()
+    print('Computing the spectrograms ..')
+    
+    with open(data_list, 'r') as f:
+        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size, win_size, hop_size, duration) for file in f]         
+    #Save the data as .npz file in savePath
+    makeDirectory(savePath)
+    outfile = savePath+'/spec'
+    with open(outfile,'w') as f:
+        np.savez(outfile, spectrograms=spectrograms)
+        print('Finished computing spectrogram and saved inside: ', savePath)        
+        
+'''        
 def get_Data_and_labels(dataType, outPath, mean_std_file,specType='mag_spec',duration=3,targets=2,computeNorm=False,
                         normType='global',normalise=True,fs=16000,fft_size=512,win_size=512,hop_size=160):
     
@@ -363,9 +358,9 @@ def get_Data_and_labels(dataType, outPath, mean_std_file,specType='mag_spec',dur
         
     return data, labels                   
 
-    
 def load_spectrograms(spec_file):
     with np.load(spec_file) as f:
         spec_data = f['spectrograms']
         #spec_labels = f['labels']
         return spec_data  #, spec_labels 
+'''
