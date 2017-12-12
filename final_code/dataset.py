@@ -296,16 +296,7 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targe
     else:
         #data = 
         spectrograms(inputType,audio_list,savePath,fft_size,win_size,hop_size,duration)
-            
-    #print('After computing spectrogram, length is: ', len(data))
-    
-    #labels=get_labels_according_to_targets(labelPath, targets)
-    
-    # Save the labels
-    #outfile = savePath+'/labels'
-    #with open(outfile,'w') as f:
-    #    np.savez(outfile, labels=labels)
-    #    print('Saved the labels in: ', savePath)
+        
         
 def get_Data_and_labels(dataType, outPath, mean_std_file,specType='mag_spec',duration=3,targets=2,computeNorm=False,
                         normType='global',normalise=True,fs=16000,fft_size=512,win_size=512,hop_size=160):
@@ -372,80 +363,9 @@ def get_Data_and_labels(dataType, outPath, mean_std_file,specType='mag_spec',dur
         
     return data, labels                   
 
-def normalise_dataOLD(data,mean_std_file,normType,computeNorm):  #mode):
-    
-    print('Input to normalise_data function is: ', len(data))
-    
-    if normType == 'utterance':
-        # irrespective of training or test mode, it will perform per utterance normalization
-        print('Utterance based Mean Variance Normalization..')
-        newData = list()
-        for spect in data:
-            mean,std = audio.compute_mean_std(spect)
-            inv_std = np.reciprocal(std)
-            newData.append((np.asarray(spect)-np.asarray(mean)) * np.asarray(inv_std))
-        data=newData
-        
-    elif normType == 'global':
-        mean=0
-        std=0
-        
-        #Compute mean and variance along time axis from training set spectrograms
-        if computeNorm:   # mode=='training':
-            print('Computing Global Mean Variance Normalization from the Data and save on disk..')
-            mean,std = audio.compute_mean_std(data)
-        
-            #Save the mean and variance in disk for later use            
-            with open(mean_std_file, 'w') as f:
-                np.savez(mean_std_file, mean=mean, std=std)
-            
-        #Load mean and std from the path provided        
-        else:
-            print('Loading the precomputed means and std')
-            if(os.path.isfile(mean_std_file)):
-                with np.load(mean_std_file) as f:
-                    mean = f['mean']
-                    std = f['std']
-            else:
-                print('Mean and std file does not exist..computing it now')            
-
-        #instead of dividing by std, its efficient to multiply     
-        inv_std = np.reciprocal(std)                              
-        data = [(spect-mean) * inv_std for spect in data]
-        #Above line throws error with python2.7 for broadcasting
-        
-    else:
-        print('No normalization is performed..')
-        
-    return data  
     
 def load_spectrograms(spec_file):
     with np.load(spec_file) as f:
         spec_data = f['spectrograms']
         #spec_labels = f['labels']
         return spec_data  #, spec_labels 
-    
-    
-def spectrogramsOLD(data_list,savePath,fft_size,win_size,hop_size,duration):
-        
-    spectrograms = list()
-    
-    #check if spectrogram exist in savePath. If yes just load it and return
-    if os.path.isfile(savePath+'/spec.npz'):
-        print('Loading pre-computed spectrograms ...')        
-        spectrograms = load_spectrograms(savePath+'/spec.npz')
-        
-    else: # Compute it and save it and also return to calling function          
-            print('Computing the spectrograms ..')
-            with open(data_list, 'r') as f:                
-                spectrograms = [audio.compute_spectrogram(
-                    file.strip(),fft_size, win_size, hop_size, duration) for file in f]
-                
-            #Save the data as .npz file in savePath
-            makeDirectory(savePath)
-            outfile = savePath+'/spec'
-            with open(outfile,'w') as f:
-                np.savez(outfile, spectrograms=spectrograms)
-                print('Finished computing spectrogram and saved inside: ', savePath)
-                
-    return spectrograms    

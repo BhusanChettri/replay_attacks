@@ -17,7 +17,7 @@ targets=2
 fftSize=2048     #256
 duration=4       #1
 padding=True
-batch_size = 30  #50 #100
+batch_size = 10  #50 #100
 
 featType=['scores']   #,'bottleneck']   # we just want the CNN predictions here !
 

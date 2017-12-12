@@ -141,29 +141,17 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     # For momentum
     momentum = tf.placeholder(tf.float32)
 
-    if trainSize == '3sec':
-        #input_data  = tf.placeholder(tf.float32, [None, 307500], name='x_input')
-        input_data = tf.placeholder(tf.float32, [None, 300, 1025,1])  #make it 4d tensor        
-        true_labels = tf.placeholder(tf.float32, [None, num_classes], name = 'y_input')
+    if fftSize == 512:
+        f = 257        
+    elif fftSize == 256:
+        f = 129
+    elif fftSize == 1024:
+        f = 513
+    elif fftSize == 2048:
+        f = 1025   
         
-    elif trainSize == '4sec':
-        #input_data  = tf.placeholder(tf.float32, [None, 410000], name='x_input')
-        input_data = tf.placeholder(tf.float32, [None, 400, 1025,1])  #make it 4d tensor        
-        true_labels = tf.placeholder(tf.float32, [None, num_classes], name = 'y_input')
-        
-    elif trainSize == '5sec':
-        #input_data  = tf.placeholder(tf.float32, [None, 512500], name='x_input')
-        input_data = tf.placeholder(tf.float32, [None, 500, 1025,1])  #make it 4d tensor
-        true_labels = tf.placeholder(tf.float32, [None, num_classes], name = 'y_input')
-        
-    elif trainSize == '1sec':
-        #input_data  = tf.placeholder(tf.float32, [None, 512500], name='x_input')
-        if fftSize == 512:
-            input_data = tf.placeholder(tf.float32, [None, 100, 257,1]) # We use 512 fft
-            true_labels = tf.placeholder(tf.float32, [None, num_classes], name = 'y_input')
-        elif fftSize == 256:
-            input_data = tf.placeholder(tf.float32, [None, 100, 129,1])
-            true_labels = tf.placeholder(tf.float32, [None, num_classes], name = 'y_input')        
+    input_data = tf.placeholder(tf.float32, [None,trainSize*100, f,1])  #make it 4d tensor
+    true_labels = tf.placeholder(tf.float32, [None,num_classes], name = 'y_input')
 
     # Placeholders for droput probability
     keep_prob1 = tf.placeholder(tf.float32)
@@ -225,11 +213,7 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     
     # create a saver instance to restore model. Just keep the best model
     saver = tf.train.Saver(max_to_keep=1)       
-    
-    # Create directories for writing summaries
-    #if os.path.exists(log_dir):
-    #    shutil.rmtree(log_dir)  
-        
+            
     makeDirectory(log_dir+'/train')
     makeDirectory(log_dir+'/test')        
     logfile = open(log_file, 'w')

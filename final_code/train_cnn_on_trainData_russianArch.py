@@ -55,8 +55,11 @@ def trainCNN_on_trainData():
     
     dropout3=1.0  #In russian arch there are only FC1 and output layer, so this not needed. 
     
-    dropout1=[0.3,0.2,0.1]
-    dropout2=[0.7,0.5,0.4,0.3,0.2]
+    #dropout1=[0.3,0.2,0.1]          # we ran this originally ! we will look into this later
+    #dropout2=[0.7,0.5,0.4,0.3,0.2]  # for dropout1=0.3, we ran all combination  
+    
+    dropout1=[0.2,0.1]
+    dropout2=[0.4,0.2]
     
     #lambdas = [0.0005, 0.001]
     
@@ -72,33 +75,36 @@ def trainCNN_on_trainData():
     fftSize = 2048
     specType='mag_spec'
     padding=True
+    
+    # Used following paths since I moved the scripts in git and used link so that code are synchronised
+    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+    tensorboardPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/tensorflow_log_dir/'
+    modelPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models/'
                 
     for duration in trainingSize:
         print('Now loading the data !!')
-        outPath = '../../spectrograms/'+specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+        outPath = spectrogramPath+specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
         mean_std_file = outPath+'train/mean_std.npz'
                 
         # Load training data, labels and perform norm
         tD = dataset.load_data(outPath+'train/')
         tL=dataset.get_labels_according_to_targets(trainP, targets)
-        dataset.compute_global_norm(tD,mean_std_file)
+
+        if not os.path.exists(mean_std_file):
+            print('Computing Mean_std file ..')
+            dataset.compute_global_norm(tD,mean_std_file)                        
         
         print('Shape of labels: ',tL.shape)
         
         #tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level        
         tD = dataset.normalise_data(tD,mean_std_file,'global_mv') # global
-        #print('Norm td: max and min are ', np.max(tD))
         
          # Load dev data, labels and perform norm
         devD = dataset.load_data(outPath+'dev/')        
         devL = dataset.get_labels_according_to_targets(devP, targets)        
         #devD = dataset.normalise_data(devD,mean_std_file,'utterance')
-        #print('first Norm dev: max and min are ', np.max(devD))
         devD = dataset.normalise_data(devD,mean_std_file,'global_mv')
-        #print('Norm dev: max and min are ', np.max(devD))
-                
-        trainSize=str(duration)+'sec'  ##may be change this in model.py also !
-        
+                        
         ### We are training on TRAIN set and validating on DEV set
         t_data = tD
         t_labels = tL
@@ -110,16 +116,17 @@ def trainCNN_on_trainData():
             
             for drop in dropout2:
                 
-                hyp_str ='arch'+str(architecture)+'_keep_'+ str(dropout)+'_'+str(drop)+'_'+trainSize
+                hyp_str ='arch'+str(architecture)+'_keep_'+ str(dropout)+'_'+str(drop)+'_'+str(duration)+'sec'
                 
-                log_dir = '../tensorflow_log_dir/rusCNN_max2000epochs/'+ hyp_str
-                model_save_path = '../models/rusCNN_max2000epochs/'+ hyp_str
+                log_dir = tensorboardPath+'/rusCNN_max2000epochs/'+ hyp_str
+                model_save_path = modelPath + '/rusCNN_max2000epochs/'+ hyp_str
                 logfile = model_save_path+'/training.log'
+                
                 figDirectory = model_save_path     
                 makeDirectory(model_save_path)
                 print('Training model with ' + str(duration) + ' sec data and cnnModel' + str(architecture))
                 
-                tLoss,vLoss,tAcc,vAcc=model.train(architecture,fftSize,padding,trainSize,t_data, t_labels,v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,optimizer_type,dropout,drop,dropout3,model_save_path,log_dir,logfile,wDecayFlag,lossPenalty,applyBatchNorm,init_type,epochs,batch_size,targets)
+                tLoss,vLoss,tAcc,vAcc=model.train(architecture,fftSize,padding,duration,t_data, t_labels,v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,optimizer_type,dropout,drop,dropout3,model_save_path,log_dir,logfile,wDecayFlag,lossPenalty,applyBatchNorm,init_type,epochs,batch_size,targets)
                 
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')

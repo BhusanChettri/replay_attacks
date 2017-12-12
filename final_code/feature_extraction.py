@@ -17,7 +17,7 @@ from optparse import OptionParser
 from network import init_weights
 from network import bias_variable
 from utility import makeDirectory
-from model import load_model
+#from model import load_model
 
 # Load userdefined modules
 import audio
@@ -167,7 +167,7 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
     print('Total_batches on dataset = ', total_batches) 
             
     #Load trained session and model parameters    
-    sess, saver = load_model(model_path, n_model)
+    sess, saver = model.load_model(model_path, n_model)
     print('Model parameters loaded succesfully !!')
     
     featureList = list()

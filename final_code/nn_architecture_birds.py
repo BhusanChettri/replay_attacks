@@ -47,6 +47,8 @@ def cnnModel1(trainSize,input_placeholder,activation,init,targets,fftSize,paddin
     # We are using power spectrogram at the moment
     
     print('FFT size used in this run is: ', fftSize)
+    print('TrainSize input to architecture is: ', trainSize)
+    trainSize = str(trainSize)+'sec'
     
     f=512  # lets take 512 as default    
     time_dim = trainSize * 100
@@ -166,8 +168,9 @@ def cnnModel1(trainSize,input_placeholder,activation,init,targets,fftSize,paddin
 def cnnModel2(trainSize,input_placeholder,activation,init,targets,fftSize,padding, keep_prob1, keep_prob2, keep_prob3):
     # Replicating the Sparrow architecture of Thomas grill.
     # It uses only conv layers, no FC layer is used here.
-    
-    trainSize = str(trainSize) + 'sec'
+        
+    print('TrainSize input to architecture is: ', trainSize)
+    trainSize = str(trainSize)+'sec'
     
     # Note: If this architecture works somehow. Then I will have to explore this deeply
     '''
