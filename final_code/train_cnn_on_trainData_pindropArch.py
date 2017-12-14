@@ -24,12 +24,7 @@ from dataset import compute_global_norm
 import audio
 import dataset
 import model
-
-basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
-trainP=basePath+'/ASVspoof2017_train_dev/protocol/ASVspoof2017_train.trn'
-devP=basePath+'/ASVspoof2017_train_dev/protocol/ASVspoof2017_dev.trl'
-evalP=basePath+'/labels/eval_genFirstSpoof_twoColumn.lab'
-   
+  
 def trainCNN_on_trainData():
 
     #CNN Training parameters
@@ -61,14 +56,14 @@ def trainCNN_on_trainData():
     trainingSize = [1]   #in seconds
     lr= 0.0001
            
-    targets=2
+    targets=13 
         
     #specType='mag_spec'     #lets try loading mag_spec    
-    #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
+    inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
     #inputTypes=['mag_spec']    # Not Run yet
     #inputTypes=['cqt_spec']    # Not Run yet
     
-    inputTypes=['mel_spec','mag_spec','cqt_spec']   # Not Run yet
+    #inputTypes=['mel_spec','mag_spec','cqt_spec']   # Not Run yet
     
     padding=True
     
@@ -100,7 +95,13 @@ def trainCNN_on_trainData():
                 
         # Load training data, labels and perform norm
         tD,tL = dataset.load_data(outPath+'train/')
-        tL = [[1,0] if label == 1 else [0,1] for label in tL]
+        tL = dataset.get_labels_according_to_targets(tL, targets)
+        
+        print('Length of labels list = ',len(tL))
+        print('Label[0] = ', tL[0])
+        
+        '''
+        #tL = [[1,0] if label == 1 else [0,1] for label in tL]
         assert(len(tD)==len(tL))
         
         if not os.path.exists(mean_std_file):
@@ -112,12 +113,14 @@ def trainCNN_on_trainData():
                 
         # Load dev data, labels and perform norm
         devD,devL = dataset.load_data(outPath+'dev/')
-        devL = [[1,0] if label == 1 else [0,1] for label in devL]
+        devL = dataset.get_labels_according_to_targets(devL, targets)
+        #devL = [[1,0] if label == 1 else [0,1] for label in devL]
         assert(len(devD)==len(devL))
-        
-        #devL = dataset.get_labels_according_to_targets(devP, targets)        
+                
         devD = dataset.normalise_data(devD,mean_std_file,'utterance')
         devD = dataset.normalise_data(devD,mean_std_file,'global_mv')                                
+        
+        
         ### We are training on TRAIN set and validating on DEV set
         
         t_data = tD
@@ -153,7 +156,7 @@ def trainCNN_on_trainData():
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')
                 plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
-                
+           '''     
                             
 trainCNN_on_trainData()
 
@@ -161,3 +164,6 @@ trainCNN_on_trainData()
 TODO:
 Before running the full model, first test with 1 epoch to ensure that the inside-code feature extraction and scoring pipeline is working well. Once it is okay, run these models in full epochs of 2000 !!
 '''
+
+# TODAY
+# 1. Reextract mel-spectrogram

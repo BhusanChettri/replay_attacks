@@ -4,9 +4,7 @@ import audio
 import os
 from utility import makeDirectory
 
-#------------------------------------------------------------------------------------------------------------------------------ 
-
-def get_labels_according_to_targets(protocalFile, targets=2):
+def get_labels_according_to_targets(protocalList, targets=2):
     # This will not work for Test Data as we do not have labels !
     # Careful using it on test data    
     
@@ -30,96 +28,96 @@ def get_labels_according_to_targets(protocalFile, targets=2):
     spf13=spf1   # this is similar to spf1, so when using train+dev we use 13 configs not 14    
     
     labels=list()
-    with open(protocalFile, 'r') as f:
-        if targets==2:
-            labels = [[1,0] if line.strip().split(' ')[1] == 'genuine' else [0,1] for line in f] #test this
-            print(len(labels))
+    
+    if targets==2:
+        labels = [[1,0] if line.strip().split(' ')[1] == 'genuine' else [0,1] for line in protocalList]        
+    else:
+        for line in protocalList:
+            units = line.strip().split(' ')
+            config = units[4]+' '+units[5]+' '+units[6]
             
-        else:
-            for line in f:
-                units = line.strip().split(' ')
-                config = units[4]+' '+units[5]+' '+units[6]
-
-                if targets ==4: # Using only Training set
-                    # This is tested. Creates the label correctly on train,dev
-                    # Not tested on Eval as it has no labels
-                    if config == gen:
-                        label=np.array([1,0,0,0]) # Genuine config
-                    elif config == spf1 or config==spf11 or config==spf12 or config==spf13: 
-                        label=np.array([0,1,0,0]) # Type1 spoof config
-                    elif config == spf2 or config==spf4 or config==spf5 or config==spf6 or config==spf10:
-                        label=np.array([0,0,1,0]) # Type2 spoof config               
-                    elif config == spf3 or config==spf7 or config==spf8 or config==spf9:
-                        label=np.array([0,0,0,1]) # Type3 spoof config
-                    labels.append(label)
+            if targets ==4: # Using only Training set
+                # This is tested. Creates the label correctly on train,dev
+                # Not tested on Eval as it has no labels
+                if config == gen:
+                    label=np.array([1,0,0,0]) # Genuine config
+                elif config == spf1 or config==spf11 or config==spf12 or config==spf13: 
+                    label=np.array([0,1,0,0]) # Type1 spoof config
+                elif config == spf2 or config==spf4 or config==spf5 or config==spf6 or config==spf10:
+                    label=np.array([0,0,1,0]) # Type2 spoof config               
+                elif config == spf3 or config==spf7 or config==spf8 or config==spf9:
+                    label=np.array([0,0,0,1]) # Type3 spoof config
                     
-                elif targets == 11:  # using only development set configs
-                    # Need to map training data cleverly coz it only has 3 configs. 
-                    if config == gen:
-                        label=np.array([1,0,0,0,0,0,0,0,0,0,0])                
-                    elif config == spf4:
-                        label=np.array([0,1,0,0,0,0,0,0,0,0,0])
-                    elif config == spf5:
-                        label=np.array([0,0,1,0,0,0,0,0,0,0,0]) 
-                    elif config == spf6:
-                        label=np.array([0,0,0,1,0,0,0,0,0,0,0]) 
-                    elif config == spf7 or config == spf3:
-                        label=np.array([0,0,0,0,1,0,0,0,0,0,0]) 
-                    elif config == spf8:
-                        label=np.array([0,0,0,0,0,1,0,0,0,0,0])
-                    elif config == spf9:
-                        label=np.array([0,0,0,0,0,0,1,0,0,0,0])
-                    elif config == spf10 or config == spf2:
-                        label=np.array([0,0,0,0,0,0,0,1,0,0,0])
-                    elif config == spf11:
-                        label=np.array([0,0,0,0,0,0,0,0,1,0,0])
-                    elif config == spf12:
-                        label=np.array([0,0,0,0,0,0,0,0,0,1,0])
-                    elif config == spf13 or config == spf1:
-                        label=np.array([0,0,0,0,0,0,0,0,0,0,1])
-                    labels.append(label)
+                labels.append(label)
                     
-                elif targets == 13: # using train+dev
-                    # 14 dimensional one-hot vector
-                    # Under this category use train data as validation because it has
-                    # less number of spoofing instances that is different from dev
-                    # This one also tested on train,dev but for eval does not work                    
-                    # that is the reason why after training network extract features and train another 
-                    # classifier
+            elif targets == 11:  # using only development set configs
+                # Need to map training data cleverly coz it only has 3 configs. 
+                if config == gen:
+                    label=np.array([1,0,0,0,0,0,0,0,0,0,0])                
+                elif config == spf4:
+                    label=np.array([0,1,0,0,0,0,0,0,0,0,0])
+                elif config == spf5:
+                    label=np.array([0,0,1,0,0,0,0,0,0,0,0]) 
+                elif config == spf6:
+                    label=np.array([0,0,0,1,0,0,0,0,0,0,0]) 
+                elif config == spf7 or config == spf3:
+                    label=np.array([0,0,0,0,1,0,0,0,0,0,0]) 
+                elif config == spf8:
+                    label=np.array([0,0,0,0,0,1,0,0,0,0,0])
+                elif config == spf9:
+                    label=np.array([0,0,0,0,0,0,1,0,0,0,0])
+                elif config == spf10 or config == spf2:
+                    label=np.array([0,0,0,0,0,0,0,1,0,0,0])
+                elif config == spf11:
+                    label=np.array([0,0,0,0,0,0,0,0,1,0,0])
+                elif config == spf12:
+                    label=np.array([0,0,0,0,0,0,0,0,0,1,0])
+                elif config == spf13 or config == spf1:
+                    label=np.array([0,0,0,0,0,0,0,0,0,0,1])
+                labels.append(label)
                     
-                    if config == gen:
-                        label=np.array([1,0,0,0,0,0,0,0,0,0,0,0,0])             
-                    elif config == spf1:
-                        label=np.array([0,1,0,0,0,0,0,0,0,0,0,0,0])             
-                    elif config == spf2:
-                        label=np.array([0,0,1,0,0,0,0,0,0,0,0,0,0])             
-                    elif config == spf3:
-                        label=np.array([0,0,0,1,0,0,0,0,0,0,0,0,0])             
-                    elif config == spf4:
-                        label=np.array([0,0,0,0,1,0,0,0,0,0,0,0,0])             
-                    elif config == spf5:
-                        label=np.array([0,0,0,0,0,1,0,0,0,0,0,0,0])             
-                    elif config == spf6:
-                        label=np.array([0,0,0,0,0,0,1,0,0,0,0,0,0]) 
-                    elif config == spf7:
-                        label=np.array([0,0,0,0,0,0,0,1,0,0,0,0,0]) 
-                    elif config == spf8:
-                        label=np.array([0,0,0,0,0,0,0,0,1,0,0,0,0]) 
-                    elif config == spf9:
-                        label=np.array([0,0,0,0,0,0,0,0,0,1,0,0,0]) 
-                    elif config == spf10:
-                        label=np.array([0,0,0,0,0,0,0,0,0,0,1,0,0]) 
-                    elif config == spf11:
-                        label=np.array([0,0,0,0,0,0,0,0,0,0,0,1,0]) 
-                    elif config == spf12:
-                        label=np.array([0,0,0,0,0,0,0,0,0,0,0,0,1]) 
+            elif targets == 13: # using train+dev
+                # 14 dimensional one-hot vector
+                # Under this category use train data as validation because it has
+                # less number of spoofing instances that is different from dev
+                # This one also tested on train,dev but for eval does not work                    
+                # that is the reason why after training network extract features and train another 
+                # classifier
+                    
+                if config == gen:
+                    label=np.array([1,0,0,0,0,0,0,0,0,0,0,0,0])             
+                elif config == spf1:
+                    label=np.array([0,1,0,0,0,0,0,0,0,0,0,0,0])             
+                elif config == spf2:
+                    label=np.array([0,0,1,0,0,0,0,0,0,0,0,0,0])             
+                elif config == spf3:
+                    label=np.array([0,0,0,1,0,0,0,0,0,0,0,0,0])             
+                elif config == spf4:
+                    label=np.array([0,0,0,0,1,0,0,0,0,0,0,0,0])             
+                elif config == spf5:
+                    label=np.array([0,0,0,0,0,1,0,0,0,0,0,0,0])             
+                elif config == spf6:
+                    label=np.array([0,0,0,0,0,0,1,0,0,0,0,0,0]) 
+                elif config == spf7:
+                    label=np.array([0,0,0,0,0,0,0,1,0,0,0,0,0]) 
+                elif config == spf8:
+                    label=np.array([0,0,0,0,0,0,0,0,1,0,0,0,0]) 
+                elif config == spf9:
+                    label=np.array([0,0,0,0,0,0,0,0,0,1,0,0,0]) 
+                elif config == spf10:
+                    label=np.array([0,0,0,0,0,0,0,0,0,0,1,0,0]) 
+                elif config == spf11:
+                    label=np.array([0,0,0,0,0,0,0,0,0,0,0,1,0]) 
+                elif config == spf12:
+                    label=np.array([0,0,0,0,0,0,0,0,0,0,0,0,1]) 
                         
-                    labels.append(label)
+                labels.append(label)
                     
     return np.asarray(labels)
 
-#------------------------------------------------------------------------------------------------------------------------------    
-def reshape_minibatch(minibatch_data): #, minibatch_labels):
+
+#------------------------------------------------------------------------------------------------------------------------------ 
+def reshape_minibatch(minibatch_data):
     # inputs is a list of numpy 2d arrays.
     # Ouput: 4d tensor of minibatch data and 2d label arrays
     
@@ -160,12 +158,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield np.asarray(inputs)[excerpt], np.asarray(targets)[excerpt]
     
 #------------------------------------------------------------------------------------------------------------------------------
-
-def load_data_old(file):
-            
-    with np.load(file+'spec.npz') as f:
-        data = f['spectrograms']        
-    return data
 
 def load_data(file):
     #if augment
@@ -245,6 +237,8 @@ def augment_data(data,label,data_window=100,input_type='mel_spec',shift=10):
     t,f = data.shape            
     window = data_window  
     
+    #label = label_line.split(' ')[1]
+    
     assert(t > window)
             
     start=0    
@@ -262,16 +256,18 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
                  window_shift=10,augment=True,save=True):
                 
     from audio import compute_spectrogram              
+
     spectrograms = list()
     labels = list()
-    
+        
     print('Computing the ' + input_type + ' spectrograms !!')    
     with open(data_list, 'r') as f:
         spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size,win_size,hop_size,duration,augment) for file in f]                 
-    # Get the labels as 1,0 in a list for the dataset
+    # Get the labels into a list and save it along with the spectrograms
     with open(labelFile,'r') as f:
-        labels = [1 if line.strip().split(' ')[1] == 'genuine' else 0 for line in f]    
-            
+        #labels = [1 if line.strip().split(' ')[1] == 'genuine' else 0 for line in f]
+        labels = [line.strip() for line in f]     
+                        
     if augment:
         new_data = list()
         new_labels = list()
@@ -287,7 +283,7 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
         spectrograms = new_data
         labels = new_labels
     
-    if save:        
+    if save:  
         from helper import makeDirectory
         makeDirectory(savePath)
         outfile = savePath+'/spec'
@@ -296,10 +292,9 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
         print('Finished computing spectrogram and saved inside: ', savePath)
     
     # We always save the spectrograms, coz we run different experiments on same data.
-    # While loading spectrogram check if its augmented one or simple one
+    # While loading spectrogram check if its augmented one or simple one    
     
-    
-def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targets=2,
+def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
                  fs=16000,fft_size=512,win_size=512,hop_size=160,data_window=100,window_shift=10,augment=True,save=True): 
         
     print('The spectrogram savepath is: ', outPath)

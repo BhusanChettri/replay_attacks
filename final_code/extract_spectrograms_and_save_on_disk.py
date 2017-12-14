@@ -15,8 +15,7 @@ def make_data_mag_spectrogram():
     win_size=256  #512
     hop_size=160
 
-    duration=1
-    targets=2
+    duration=1    
     inputType='mag_spec'
     
     augment=True
@@ -34,17 +33,17 @@ def make_data_mag_spectrogram():
                 
     # Prepare training data
     print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
 
     # Prepare Validation data
     print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
     
     # Prepare test data
     #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     #augment,save)
     
 def make_data_mel_spectrogram():
@@ -54,7 +53,6 @@ def make_data_mel_spectrogram():
     hop_size=160
 
     duration=1
-    targets=2
     inputType='mel_spec'
     augment=True
     data_window=100   # for FFT based and for cqt =    
@@ -71,17 +69,17 @@ def make_data_mel_spectrogram():
                 
     # Prepare training data
     print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
 
     # Prepare Validation data
     print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
     
     # Prepare test data
     #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     #augment,save)    
 
 def make_data_cqt_spectrogram():
@@ -94,7 +92,7 @@ def make_data_cqt_spectrogram():
     hop_size=160
 
     duration=1
-    targets=2
+    
     inputType='cqt_spec'
     augment=True
     data_window=47    # Using default configurations for cqt, window = 47 
@@ -112,21 +110,21 @@ def make_data_cqt_spectrogram():
                 
     # Prepare training data
     print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
 
     # Prepare Validation data
     print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
                  augment,save)
     
     # Prepare test data
     #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     #augment,save)        
     
 #make_data_mag_spectrogram()
-#make_data_mel_spectrogram()
-make_data_cqt_spectrogram()
+make_data_mel_spectrogram()
+#make_data_cqt_spectrogram()
 
 
