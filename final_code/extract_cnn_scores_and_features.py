@@ -12,7 +12,7 @@ import io
 import numpy as np
 
 import dataset
-from dataset import get_Data_and_labels
+#from dataset import get_Data_and_labels
 from feature_extraction import getFeatures
 from feature_extraction import saveFeatures
 
@@ -49,6 +49,7 @@ def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file
     print('Extracting ' + featType + ' for the ' + dataType + 'set')
     
     data = dataset.load_data(inputPath+ dataType+'/')
+    data = dataset.normalise_data(data,mean_std_file,'utterance')
     data = dataset.normalise_data(data,mean_std_file,'global_mv')
     labels=dataset.get_labels_according_to_targets(protocal, targets)
         
@@ -64,7 +65,7 @@ def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file
 
 #--------------------------------------------------------------------------------------------------------------------
 
-def get_scores_and_features(model_path,batch_size=100, init_type='xavier',activation='elu',normType='global',normalise=True,
+def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activation='elu',normType='global',normalise=True,
                             architecture=2,specType='mag_spec',targets=2,fftSize=256,duration=1,padding=True,
                             featType='scores'):
     
@@ -92,10 +93,10 @@ def get_scores_and_features(model_path,batch_size=100, init_type='xavier',activa
         run_prediction(model_path,feat,'dev',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
                        init_type,targets,fftSize,architecture,duration,padding,n_model)
         
-        print('Now extracting on Eval set !')
+        #print('Now extracting on Eval set !')
     
-        run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-                       init_type,targets,fftSize,architecture,duration,padding,n_model)
+        #run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
+        #               init_type,targets,fftSize,architecture,duration,padding,n_model)
         
 #-----------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------

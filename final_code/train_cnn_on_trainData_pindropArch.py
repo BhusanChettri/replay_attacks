@@ -12,7 +12,6 @@ import sys
 import os
 import io
 import numpy as np
-import tensorflow as tf
 
 from optparse import OptionParser
 from plotGraph import plot_entropy_loss
@@ -42,7 +41,7 @@ def trainCNN_on_trainData():
     
     # Regularizer parameters
     use_lr_decay=False        #set this flag for LR decay
-    wDecayFlag = True         #whether to perform L2 weight decay or not
+    wDecayFlag = False         #whether to perform L2 weight decay or not
     lossPenalty = 0.001       # Using lambda=0.001 .
     applyBatchNorm = False    
     deviceId = "/gpu:0"  
@@ -53,9 +52,9 @@ def trainCNN_on_trainData():
     b2=0.999
     epsilon=0.1
     momentum=0.95
-    dropout1=0.1                 #for input to first FC layer  
-    dropout2=0.2                 #for intermediate layer input    
-    drops=[0.4]
+    #dropout1=1.0                 #for input to first FC layer  
+    #dropout2=1.0                 #for intermediate layer input    
+    drops=[1.0,0.5]           # We train two networks for each category, first without any dropout and with 50%
     lambdas = [0.0005, 0.001]
     
     architectures = [1]
@@ -63,67 +62,102 @@ def trainCNN_on_trainData():
     lr= 0.0001
            
     targets=2
-    fftSize = 512
-    specType='mag_spec'    
+        
+    #specType='mag_spec'     #lets try loading mag_spec    
+    #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
+    #inputTypes=['mag_spec']    # Not Run yet
+    #inputTypes=['cqt_spec']    # Not Run yet
+    
+    inputTypes=['mel_spec','mag_spec','cqt_spec']   # Not Run yet
+    
     padding=True
     
+    augment = True 
+    trainPercentage=0.25    #Each training epoch will see only 30% of the original data at random !
+    valPercentage=0.1
+    
+    if augment:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    else:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
+            
     # Used following paths since I moved the scripts in git and used link so that code are synchronised
-    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
     tensorboardPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/tensorflow_log_dir/'
-    modelPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models/'
+    modelPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/'
                 
-    for duration in trainingSize:
-        print('Now loading the data !!')
+    #for duration in trainingSize:
+    duration=1
+    for specType in inputTypes:
+               
+        if specType == 'mel_spec' or specType == 'cqt_spec':            
+            fftSize=512
+        else:            
+            fftSize=256
+                
+        print('Now loading the data with FFT size: ', fftSize)
         outPath = spectrogramPath +specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
         mean_std_file = outPath+'train/mean_std.npz'
                 
         # Load training data, labels and perform norm
-        tD = dataset.load_data(outPath+'train/')
-        tL=dataset.get_labels_according_to_targets(trainP, targets)
+        tD,tL = dataset.load_data(outPath+'train/')
+        tL = [[1,0] if label == 1 else [0,1] for label in tL]
+        assert(len(tD)==len(tL))
         
         if not os.path.exists(mean_std_file):
             print('Computing Mean_std file ..')
             dataset.compute_global_norm(tD,mean_std_file)
-        
-        print('Shape of labels: ',tL.shape)
-        
-        #tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level        
-        tD = dataset.normalise_data(tD,mean_std_file,'global_mv') # global
                 
-         # Load dev data, labels and perform norm
-        devD = dataset.load_data(outPath+'dev/')        
-        devL = dataset.get_labels_according_to_targets(devP, targets)        
-        #devD = dataset.normalise_data(devD,mean_std_file,'utterance')
-        devD = dataset.normalise_data(devD,mean_std_file,'global_mv')
-                                        
+        tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level      
+        tD = dataset.normalise_data(tD,mean_std_file,'global_mv')    # global
+                
+        # Load dev data, labels and perform norm
+        devD,devL = dataset.load_data(outPath+'dev/')
+        devL = [[1,0] if label == 1 else [0,1] for label in devL]
+        assert(len(devD)==len(devL))
+        
+        #devL = dataset.get_labels_according_to_targets(devP, targets)        
+        devD = dataset.normalise_data(devD,mean_std_file,'utterance')
+        devD = dataset.normalise_data(devD,mean_std_file,'global_mv')                                
         ### We are training on TRAIN set and validating on DEV set
+        
         t_data = tD
         t_labels = tL
         v_data = devD
         v_labels = devL                
-             
-        for dropout in drops:
+        
+        print('Training model on ', specType)
+
+        for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
             
             for penalty in lambdas:
                 
-                hyp_str ='_cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
+                #hyp_str ='cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
+                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)
                 
-                log_dir = tensorboardPath+ '/model1_max2000epochs_L2/'+ hyp_str
-                model_save_path = modelPath + '/model1_max2000epochs_L2/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_max2000epochs/'+ hyp_str
+                model_save_path = modelPath + '/model1_max2000epochs/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        
                 makeDirectory(model_save_path)
-                print('Training model with ' + str(duration) + ' sec data and cnnModel' + str(architecture))
+                                
                 
-                tLoss,vLoss,tAcc,vAcc=model.train(architecture,fftSize,padding,duration,t_data, t_labels,v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,optimizer_type,dropout1,dropout2,dropout,model_save_path,log_dir,logfile,wDecayFlag,penalty,applyBatchNorm,init_type,epochs,batch_size,targets)
+                tLoss,vLoss,tAcc,vAcc=model.train(specType,architecture,fftSize,padding,duration,t_data,t_labels,
+                                                  v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,
+                                                  optimizer_type,dropout,dropout,dropout,model_save_path,log_dir,
+                                                  logfile,wDecayFlag,penalty,applyBatchNorm,init_type,epochs,batch_size,
+                                                  targets,augment,trainPercentage,valPercentage)
+                                                
                                                                                         
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')
                 plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
                 
+                            
 trainCNN_on_trainData()
 
-
-
+'''
+TODO:
+Before running the full model, first test with 1 epoch to ensure that the inside-code feature extraction and scoring pipeline is working well. Once it is okay, run these models in full epochs of 2000 !!
+'''

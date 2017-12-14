@@ -115,23 +115,34 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
     #print('Datatype is = ', dataType)
     #print('Targets = ', targets)
         
-    print('Reset TF graph and load trained models and session..')
-        
+    print('Reset TF graph and load trained models and session..')        
     tf.reset_default_graph()
-
-    if fftSize == 512:
-        f = 257        
-    elif fftSize == 256:
-        f = 129
-    elif fftSize == 1024:
-        f = 513
-    elif fftSize == 2048:
-        f = 1025   
-   
-    input_data = tf.placeholder(tf.float32, [None,trainSize*100, f,1])  #make it 4d tensor
-    true_labels = tf.placeholder(tf.float32, [None,targets], name = 'y_input')
-
     
+    t = trainSize*100  #Default is this
+                                  
+    if input_type=='mel_spec':
+        f= 80
+    elif input_type=='cqt_spec':
+        f = 84        
+        if augment:
+            t=47
+        else:
+            t=47     ## This needs to be fixed. At the moment for CQT, we have 47 as time dimension
+        
+    elif input_type=='mag_spec':
+        
+        if fftSize == 512:
+            f = 257
+        elif fftSize == 256:
+            f = 129
+        elif fftSize == 1024:
+            f = 513
+        elif fftSize == 2048: 
+            f = 1025
+                
+    input_data = tf.placeholder(tf.float32, [None,t, f,1])  #make it 4d tensor
+    true_labels = tf.placeholder(tf.float32, [None,targets], name = 'y_input')
+            
     # Placeholders for droput probability
     keep_prob1 = tf.placeholder(tf.float32)
     keep_prob2 = tf.placeholder(tf.float32)
@@ -188,8 +199,8 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
         else:
             scores = sess.run([modelScore] , feed_dict={input_data:data, true_labels:labels,keep_prob1: 1.0,
                                                                 keep_prob2: 1.0, keep_prob3: 1.0})            
-            print('Printing 10 scores in this batch:')
-            print(scores[0:10])
+            print('Printing 5 scores in this batch:')
+            print(scores[0:5])
             scoreList.append(scores) # use append only
             
     if featType == 'bottleneck':

@@ -8,32 +8,125 @@ from dataset import load_data
 from dataset import compute_global_norm
 from helper import makeDirectory
 
-def make_data():
+def make_data_mag_spectrogram():
+    
     fs=16000
-    fft_size=2048  #256  # 512
-    win_size=2048  #256  #512
+    fft_size=256  # 512
+    win_size=256  #512
     hop_size=160
 
-    duration=4
+    duration=1
     targets=2
     inputType='mag_spec'
     
-    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+    augment=True
+    data_window=100   # for FFT based and for cqt = 
+    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    save=True
+    
+    if augment:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    else:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
         
     basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
     print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size)
+    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
 
     # Prepare Validation data
     print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size)
+    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
     
     # Prepare test data
-    print('Preparing the test data')
-    prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size)
-
+    #print('Preparing the test data')
+    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #augment,save)
     
-make_data()
+def make_data_mel_spectrogram():
+    fs=16000
+    fft_size=512
+    win_size=512
+    hop_size=160
+
+    duration=1
+    targets=2
+    inputType='mel_spec'
+    augment=True
+    data_window=100   # for FFT based and for cqt =    
+    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    save=True
+    
+    if augment:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    else:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'            
+        
+    basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
+    outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
+                
+    # Prepare training data
+    print('Preparing the training data')
+    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
+
+    # Prepare Validation data
+    print('Preparing the validation data')
+    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
+    
+    # Prepare test data
+    #print('Preparing the test data')
+    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #augment,save)    
+
+def make_data_cqt_spectrogram():
+    # Note that in audio.py, the spectrogram for CQT uses default parameters. Later we may want to think over this !
+    # Thus these parameters being passed has no effect. 
+    
+    fs=16000
+    fft_size=512
+    win_size=512
+    hop_size=160
+
+    duration=1
+    targets=2
+    inputType='cqt_spec'
+    augment=True
+    data_window=47    # Using default configurations for cqt, window = 47 
+    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    save=True
+
+    if augment:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    else:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
+    
+    
+    basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
+    outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
+                
+    # Prepare training data
+    print('Preparing the training data')
+    prepare_data(basePath,'train',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
+
+    # Prepare Validation data
+    print('Preparing the validation data')
+    prepare_data(basePath,'dev',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
+    
+    # Prepare test data
+    #print('Preparing the test data')
+    #prepare_data(basePath,'test',outPath,inputType,duration,targets,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #augment,save)        
+    
+#make_data_mag_spectrogram()
+#make_data_mel_spectrogram()
+make_data_cqt_spectrogram()
+
+

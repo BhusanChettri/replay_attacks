@@ -119,11 +119,11 @@ def makeDirectory(path):
         os.makedirs(path)
 #----------------------------------------------------------------------------------------------------------------          
         
-def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_data, val_labels, 
+def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_labels, val_data, val_labels, 
           activation,learning_rate,use_lr_decay,epsilon,b1,b2,mu,optimizer_type,
           drop1,drop2,drop3,model_path,log_dir, log_file, wDecayFlag,lossPenalty,
           applyBatchNorm, init_type='xavier',epochs=10, batch_size=32, num_classes=2,
-          display_per_epoch=10,save_step = 1,summarize=True):
+          augment=False,trainPercentage=0.6,valPercentage=0.1,display_per_epoch=10,save_step = 1,summarize=True):
         
     print('Reset graph and create data and label placeholders..')
     tf.reset_default_graph()
@@ -140,17 +140,29 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     
     # For momentum
     momentum = tf.placeholder(tf.float32)
-
-    if fftSize == 512:
-        f = 257        
-    elif fftSize == 256:
-        f = 129
-    elif fftSize == 1024:
-        f = 513
-    elif fftSize == 2048:
-        f = 1025   
+    t = trainSize*100  #Default is this
+                          
+    if input_type=='mel_spec':
+        f= 80
+    elif input_type=='cqt_spec':
+        f = 84        
+        if augment:
+            t=47
+        else:
+            t=47     ## This needs to be fixed. At the moment for CQT, we have 47 as time dimension
         
-    input_data = tf.placeholder(tf.float32, [None,trainSize*100, f,1])  #make it 4d tensor
+    elif input_type=='mag_spec':
+        
+        if fftSize == 512:
+            f = 257
+        elif fftSize == 256:
+            f = 129
+        elif fftSize == 1024:
+            f = 513
+        elif fftSize == 2048: 
+            f = 1025
+                
+    input_data = tf.placeholder(tf.float32, [None,t, f,1])  #make it 4d tensor
     true_labels = tf.placeholder(tf.float32, [None,num_classes], name = 'y_input')
 
     # Placeholders for droput probability
@@ -172,15 +184,13 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     network_weights=None
     activations=None
     biases=None
-    
-    dataType = 'train'   ### Take care of this later
-
+        
     if applyBatchNorm:
         _, model_prediction, network_weights, update_ema, tst, itr = cnnModel0_BN(
             input_data, act, init_type, keep_prob1, keep_prob2, tst, itr)
     else:         
         if architecture == 1:           
-            _, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel1(dataType,trainSize, input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
+            _, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel1(input_type,trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         elif architecture == 2:
             _, model_prediction,network_weights,activations,biases= nn_b.cnnModel1(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         elif architecture == 3:
@@ -224,6 +234,7 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
                 
     total_batches = int(len(train_data)/batch_size)   #+1
     val_total_batches = int(len(val_data)/batch_size) #+1
+    
     print('Total_batches on training set = ', total_batches)
     print('Total_batches on validation set = ', val_total_batches)
     
@@ -255,8 +266,16 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     min_learning_rate = 0.0001
     decay_speed = 2000
     
-    #dataLogfile = open('datalog.txt', 'w')
-            
+    tot=total_batches
+    val_tot=val_total_batches
+    
+    if augment:        
+        total_batches = int(trainPercentage*total_batches)
+        val_total_batches = int(valPercentage*val_total_batches)
+        
+    print('For training we use only: ' + str(total_batches) + ' examples out of total: ' + str(tot))
+    print('For validation we use only: ' + str(val_total_batches) + ' examples out of total: ' + str(val_tot))
+                        
     for epoch in range(epochs):     
         print("Epoch: ", epoch+1)
         # Now prepare training data generator to iterate over mini-batches and run training loop
@@ -266,9 +285,11 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
         print('Learning rate used in Epoch '+ str(epoch) + ' is = ' + str(learning_rate))     
         
         for j in range(total_batches):            
-            data, labels = next(batch_generator)                        
+            data, labels = next(batch_generator)  
+            print('IN MODEL.py, input data 0 shape is: ',data[0].shape)
+            
             data = dataset.reshape_minibatch(data)
-            print('Input data 0 shape is: ',data[0].shape) 
+             
             
             # Run the training optimization step on mini-batch
             sess.run(train_step, feed_dict={input_data:data, true_labels:labels,keep_prob1:drop1, 
@@ -283,8 +304,7 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
             #-------------------------------------------------------------------------------
             print('\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
             rawPrediction_post= sess.run(model_prediction,feed_dict={input_data:data, 
-                                        true_labels:labels,keep_prob1:1.0,keep_prob2:1.0, keep_prob3:1.0,tst:False, itr:i})            
-            
+                                        true_labels:labels,keep_prob1:1.0,keep_prob2:1.0, keep_prob3:1.0,tst:False, itr:i})                        
             #print('\n Printing first 15 Scores/Prediction (WX+B): \n', rawPrediction_post[0:15])            
             loss2=sess.run(cross_entropy2, feed_dict={input_data:data, true_labels:labels, keep_prob1: 1.0, 
                                                 keep_prob2: 1.0, keep_prob3:1.0, tst:False, itr:i})
@@ -305,12 +325,11 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
             #------------------------
             
             # Occasionally write training summaries. Enable this to view stuffs in TensorBoard !
-            #if j%display_step==0:                                                
-            #    batch_summary = sess.run(
-            #        merged_summary,feed_dict={input_data: data, true_labels: labels,
-            #                                  keep_prob1: 1.0, keep_prob2: 1.0, keep_prob3:1.0,tst:False, itr:i})
-            #    train_writer.add_summary(batch_summary,global_step=m)
-            #    m+=1                                                             
+            if j%display_step==0:                                                
+                batch_summary = sess.run(merged_summary,feed_dict={input_data: data, true_labels: labels,
+                                              keep_prob1: 1.0, keep_prob2: 1.0, keep_prob3:1.0,tst:False, itr:i})
+                train_writer.add_summary(batch_summary,global_step=m)
+                m+=1                                                             
         
         '''
         # Write the summary using Validation data
@@ -341,17 +360,19 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
         avg_loss=0
         avg_acc=0                
         #print('Testing performance on training set now ..')
-        # Now after each epoch we test performance on entire training set and validation set.        
+        #Now after each epoch we test performance on entire training set and validation set.        
         #train_batch_generator = dataset.iterate_minibatches(train_data, train_labels, batch_size, shuffle=False)        
         #avg_loss, avg_acc = testonValidationData(sess,train_batch_generator, total_batches,input_data,true_labels,
-        #                                         keep_prob1, keep_prob2,keep_prob3,tst,itr, cross_entropy2,accuracy)
+        #                                        keep_prob1,keep_prob2,keep_prob3,tst,itr,cross_entropy2,accuracy,
+        #                                         augment,valPercentage)
                                  
         # Test on Validation data using model trained        
         # we keep shuffle =False because we are testing, so no need to shuffle
         print('Testing performance on validation set now ..')
-        test_batch_generator = dataset.iterate_minibatches(val_data, val_labels, batch_size, shuffle=False)
-        val_loss, val_acc = testonValidationData(sess, test_batch_generator,val_total_batches, input_data, true_labels,
-                                    keep_prob1, keep_prob2, keep_prob3, tst,itr, cross_entropy2, accuracy)
+        ## We should make shuffle = TRUE here. Updated on 13th December. We make it TRue now
+        test_batch_generator = dataset.iterate_minibatches(val_data, val_labels, batch_size,shuffle=True)
+        val_loss, val_acc = testonValidationData(sess,test_batch_generator,val_total_batches,input_data,true_labels,
+                                    keep_prob1,keep_prob2,keep_prob3,tst,itr,cross_entropy2,accuracy,augment,valPercentage)
         
         # Append to the list
         train_ce_loss.append(avg_loss)
@@ -393,7 +414,8 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
             print('Also we compute Training loss of this best Model for records !!')
             train_batch_generator = dataset.iterate_minibatches(train_data, train_labels, batch_size, shuffle=False)
             avg_loss, avg_acc = testonValidationData(sess,train_batch_generator, total_batches,input_data,true_labels,
-                                                    keep_prob1, keep_prob2,keep_prob3,tst,itr, cross_entropy2,accuracy)
+                                                    keep_prob1, keep_prob2,keep_prob3,tst,itr, cross_entropy2,accuracy,
+                                                    augment,valPercentage)
             
             print("Avg CE loss on Training data = "+"{:.5f}".format(avg_loss))
             print("Avg Accuracy on training data = "+"{:.5f}".format(avg_acc))
@@ -406,8 +428,7 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
             # The loss_tracker keeps track of whether there has been any improvement in validation loss
             # over last N epochs. If not stop training loop !! Early stopping !            
             loss_tracker += 1
-                        
-        
+                                
         # We decrease the learning rate if no progress on validation loss over the last 5 epochs
         '''if loss_tracker > 4:
             print('Validation loss did not improve over last 5 Epochs. We decrease Learning Rate !')
@@ -421,9 +442,7 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
         if loss_tracker > 50 and val_loss > best_validation_loss:
             print('Validation loss did not improve in last 50 epochs. We abort training loop.')
             logfile.write("Validation loss did not improve over last 50 Epochs. We abort training loop..." + '\n')
-            break
-        #else:
-        #    loop_stopper=0
+            break            
             
     logfile.write('Optimization finished at : '+str(datetime.now())+'\n')
     print('Training optimization is finished: '+str(datetime.now()))
@@ -431,47 +450,44 @@ def train(architecture,fftSize,padding,trainSize,train_data, train_labels, val_d
     #Closing the log stats file
     logfile.close()
         
-    ######## Here run feature extraction and prediction using the trained model ##############
-    # Save the score and features for each train,dev,eval inside the same trained model folder
-    # This avoids confusion later on
-    
-    normalise=True          # will always be true, so no need to pass         
-    normType = 'global'      # not passed to model.py, but mostly we do global
-    print('MAKE SURE THAT NORMALIZATION IS DONE CORRECTLY ON TEST SETS !!')
-    
-    #TODO
-    # Create a unified pipeline that will train model and perform testing in a single go
-    # Make model.py recieve train, dev and eval data with some other missing parameters.
-        
-    specType='mag_spec'    # This is not passed to model.py ! need to see !
-    duration=1   # need to change like i did in feature_extraction.py
-        
     '''
-    architecture = 2
+    Using the trained model now we perform scoring and feature extraction on train+dev dataset. We will test on eval data
+    later on. Also note that we do utterance based + global mv normalization 
+    '''
+        
+    if input_type == 'cqt_spec':
+        duration=trainSize         # THIS WILL  THROW ERROR FOR SURE !!
+    else:
+        duration=trainSize
+    
     targets=num_classes
-    fftSize=256
-    padding=True    
-    init_type='xavier'
-    activation='elu'
-    '''                  # these are passed to model.py
+    normalise=True
+    normType = 'global'
+    batch_size=100
+    featTypes=['scores','bottleneck']
+    
+    for featType in featTypes:
+        print('Using trained model we extract ', featType)
+        extractor.get_scores_and_features(model_path,batch_size,init_type,activation,normType,normalise,architecture,
+                                          input_type,targets,fftSize,duration,padding,featType)
         
-    '''
-    featType=['scores','bottleneck']
-    
-    batch_size=100  #during Testing
-    extractor.get_scores_and_features(model_path,batch_size,init_type,activation,normType,normalise,architecture,specType,
-                                  targets,fftSize,duration,padding,featType)
-    '''
-    ###########################################################################################
-    
+    # Once we are done with extraction of score and bottleneck features return    
     return train_ce_loss, val_ce_loss, train_accuracy, val_accuracy
 
 
 def testonValidationData(sess, test_batch_generator, total_batches,input_data, true_labels,
-                         keep_prob1,keep_prob2,keep_prob3,tst,itr,cross_entropy, accuracy):
+                         keep_prob1,keep_prob2,keep_prob3,tst,itr,cross_entropy,accuracy,augment,valPercentage):
     
     loss = list()
     acc = list()
+    #tot = total_batches
+            
+    ## During training time, lets use only 20% data for validation of parameters
+    ## Every time it will be randomized. With data augmentation 20% is still a huge numbers
+    #if augment:        
+    #    total_batches = int(valPercentage*total_batches) 
+    
+    #print('For validation we use only: ' + str(total_batches) + ' examples out of total: ' + str(tot))
     
     for k in range(total_batches):
         data, labels = next(test_batch_generator)

@@ -30,84 +30,51 @@ from network import fc_layer_noAct
 from network import conv_layer_noAct
 
 #---------------------------------------------------------------------------------------------------------------
-def cnnModel1(dataType,trainSize,input_placeholder,activation,init,targets,fftSize,padding,keep_prob1, keep_prob2, keep_prob3):
-
-    # The parameter dataType is added here to enable scoring on eval data in end-to-end setting
-    # using 2 targets. This is temporary, need to finalize. Might remove later because with more than
-    # 2 targets our code for end-end scoring does not work any way, because it is designed only for 2 targets.
-    # However networks trained with >2 targets are essentially used for extracted features to train another classifier
+def cnnModel1(input_type,trainSize,input_placeholder,activation,init,targets,fftSize,padding,keep_prob1, keep_prob2, keep_prob3):
+    
     # So I will have to come back to this again for code cleaning.
     # Code affected would be: feature_extraction.py, extract_cnn_scores.py, nn_architecture.py, extract_cnn_features.py
+    t=trainSize
     
-    if dataType=='test':
-        targets=2    
-    
-    f=512  # lets take 512 as default
-    
-    # Input = 100x257
-    if fftSize == 512:
-        f = 257        
-    elif fftSize == 256:
-        f = 129
-    elif fftSize == 1024:
-        f = 513
-    elif fftSize == 2048:
-        f = 1025   
-    
+    trainSize=str(trainSize)+'sec'
+            
+    if input_type=='mel_spec':
+        f= 80
+    elif input_type=='cqt_spec':
+        f = 84        
+    elif input_type=='mag_spec':
+        
+        if fftSize == 512:
+            f = 257
+        elif fftSize == 256:
+            f = 129
+        elif fftSize == 1024:
+            f = 513
+        elif fftSize == 2048: 
+            f = 1025   
+            
     weight_list = list()
     activation_list = list()
     bias_list = list()
     
-    if trainSize == '1sec':
-        time_dim=100
-        if activation=='mfm':
-            fc_input=16448 #1*257*64 = 16448
-        else:
-            fc_input= 32896 # 1*257*128
-
-    elif trainSize == '2sec':
-        time_dim=200
-        if activation=='mfm':
-            fc_input=0  #Check it   
-        else:
-            fc_input=0 # chek it
-            
-    elif trainSize == '3sec':
-        time_dim=300
-        if activation=='mfm':
-            fc_input=5280   #10*33*16
-        else:
-            fc_input=10560  #10*33*32            
-            
-    elif trainSize == '4sec':
-        time_dim = 400
-        if activation == 'mfm':
-            fc_input = 6864    #13*33*16 = 6864
-        else:
-            fc_input = 13728   #13*33*32 = 13728
-        
-    elif trainSize == '5sec':
-        time_dim = 500
-        if activation == 'mfm':
-            fc_input = 8976    #17*33*16
-        else:
-            fc_input = 17952   #17*33*32
-                
     if activation=='mfm':
+        fc_input= f*64   #6448 #1*257*64 = 16448
         in_conv2 = 64
         in_conv3 = 64
         in_conv4 = 64
         in_fc2 = 128
         in_fc3 = 128
         in_outputLayer = 128
+        
     else:
+        fc_input= f*128  #32896 # 1*257*128
         in_conv2 = 128
         in_conv3 = 128
         in_conv4 = 128
         in_fc2 = 256
         in_fc3 = 256
         in_outputLayer = 256
-                       
+                               
     #Convolution layer1,2,3    
     conv1,w1,b1 = conv_layer(input_placeholder, [3,f,1,128], [128], [1,1,1,1],'conv1',padding,activation,init)
     weight_list.append(w1)
@@ -123,6 +90,11 @@ def cnnModel1(dataType,trainSize,input_placeholder,activation,init,targets,fftSi
     weight_list.append(w3)
     bias_list.append(b3)    
     print('Conv2 ', conv3)
+    
+    if input_type == 'cqt_spec':
+        time_dim = 47
+    else:
+        time_dim = t*100    
     
     #Max-pooling layer over time    
     pool1 = maxPool2x2(conv3, [1,time_dim,1,1], [1,time_dim,1,1])
@@ -161,21 +133,7 @@ def cnnModel1(dataType,trainSize,input_placeholder,activation,init,targets,fftSi
 
     #Output layer: 2 neurons. One for genuine and one for spoof. Dropout applied first
     dropped_4 = drop_layer(fc3, keep_prob3, 'dropout4')
-    output=None
-    w7=None
-    b7=None
-               
-    if targets == 2:
-        print('Inside nn_architecture: Targets = ', targets)
-        output,w7,b7 = fc_layer(dropped_4, in_outputLayer, targets, 'Output_Layer', 'no-activation')  #get raw logits
-        
-    elif targets == 4:
-        print('Inside nn_architecture: Targets = ', targets)
-        output,w7,b7 = fc_layer(dropped_4, in_outputLayer, targets, 'Output_Layer', 'no-activation')  #get raw logits
-    elif targets == 11:
-        output,w7,b7 = fc_layer(dropped_4, in_outputLayer, targets, 'Output_Layer', 'no-activation')  #get raw logits
-    elif targets == 14:
-        output,w7,b7 = fc_layer(dropped_4, in_outputLayer, targets, 'Output_Layer', 'no-activation')  #get raw logits
+    output,w7,b7 = fc_layer(dropped_4, in_outputLayer, targets, 'Output_Layer', 'no-activation')  #get raw logits        
         
     weight_list.append(w7)
     bias_list.append(b7)            
@@ -184,5 +142,4 @@ def cnnModel1(dataType,trainSize,input_placeholder,activation,init,targets,fftSi
     
     
     return fc3, output, weight_list, activation_list, bias_list
-
 #---------------------------------------------------------------------------------------------------------------

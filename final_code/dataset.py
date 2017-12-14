@@ -125,14 +125,16 @@ def reshape_minibatch(minibatch_data): #, minibatch_labels):
     
     l = len(minibatch_data)
     t, f = minibatch_data[0].shape
-    #print('Time and frequency', t, f)
+    
+    #print('In reshape minibatch, Time and frequency', t, f)
     
     reshaped_data = np.empty((l,t,f))
-    for i in range(l):
+    for i in range(l):        
         reshaped_data[i] = minibatch_data[i]
-            
+                    
     # Now convert 3d array to 4d array
     reshaped_data = np.expand_dims(reshaped_data, axis=3)
+    #print('Returning from reshape_minibatch')
             
     return np.asarray(reshaped_data)
 
@@ -159,19 +161,18 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     
 #------------------------------------------------------------------------------------------------------------------------------
 
-
-                
-            
-#------------------------------------------------------------------------------------------------------------------------------            
-def load_data(file):
+def load_data_old(file):
             
     with np.load(file+'spec.npz') as f:
-        data = f['spectrograms']
-        
-    #with np.load(labelFile) as f:
-    #    labels = f['labels']
+        data = f['spectrograms']        
+    return data
 
-    return data #, labels   # we cant tie data and labels together
+def load_data(file):
+    #if augment
+    with np.load(file+'spec.npz') as f:
+        spec_data = f['spectrograms']
+        spec_labels = f['labels']
+        return spec_data,spec_labels 
 
 def compute_global_norm(data,mean_std_file):
     print('Computing Global Mean Variance Normalization from the Data and save on disk..')
@@ -224,9 +225,83 @@ def normalise_data(data,mean_std_file,normType):
     return data
 
 #------------------------------------------------------------------------------------------------------------------------------
-def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targets=2,
-                 fs=16000,fft_size=512,win_size=512,hop_size=160):    
+
+def augment_data(data,label,data_window=100,input_type='mel_spec',shift=10):
+    '''
+    Inputs: 
+       data = original data matrix in TxF format. Rows specifies frames and columns frequency.
+       data_window = how many frames to keep in one matrix
+       input_type = either CQT or MEl_SPEC
+       shift = 10 by default. If a frame is 32ms, then 10 shift corresponds to 320ms
+       
+    Outputs:
+       a list of matrices obtained from the original matrix using sliding window mechanism, this is kind
+       of a data augmentation technique for producing many matrices.       
+       '''
     
+    dataList = list()
+    labelList = list()        
+    
+    t,f = data.shape            
+    window = data_window  
+    
+    assert(t > window)
+            
+    start=0    
+    for i in range(window, t, shift):
+                
+        new_data = data[start:i]
+        start += shift
+        dataList.append(new_data)
+        labelList.append(label)
+                
+    return dataList,labelList
+
+
+def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_size,duration,data_window=100,
+                 window_shift=10,augment=True,save=True):
+                
+    from audio import compute_spectrogram              
+    spectrograms = list()
+    labels = list()
+    
+    print('Computing the ' + input_type + ' spectrograms !!')    
+    with open(data_list, 'r') as f:
+        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size,win_size,hop_size,duration,augment) for file in f]                 
+    # Get the labels as 1,0 in a list for the dataset
+    with open(labelFile,'r') as f:
+        labels = [1 if line.strip().split(' ')[1] == 'genuine' else 0 for line in f]    
+            
+    if augment:
+        new_data = list()
+        new_labels = list()
+        
+        assert(len(labels) == len(spectrograms))
+        print('Now performing augmentation using sliding window mechanism on original spectrogram .... ')
+        
+        for i in range(len(spectrograms)):    
+            d,l = augment_data(spectrograms[i],labels[i],data_window,input_type,window_shift)            
+            new_data.extend(d) # extend the list rather than adding it into a new list
+            new_labels.extend(l)
+            
+        spectrograms = new_data
+        labels = new_labels
+    
+    if save:        
+        from helper import makeDirectory
+        makeDirectory(savePath)
+        outfile = savePath+'/spec'
+        with open(outfile,'w') as f:
+            np.savez(outfile, spectrograms=spectrograms, labels=labels)
+        print('Finished computing spectrogram and saved inside: ', savePath)
+    
+    # We always save the spectrograms, coz we run different experiments on same data.
+    # While loading spectrogram check if its augmented one or simple one
+    
+    
+def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targets=2,
+                 fs=16000,fft_size=512,win_size=512,hop_size=160,data_window=100,window_shift=10,augment=True,save=True): 
+        
     print('The spectrogram savepath is: ', outPath)
     
     trainP=basePath+'/ASVspoof2017_train_dev/protocol/ASVspoof2017_train.trn'
@@ -259,9 +334,9 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targe
     elif dataType == 'validation' or dataType=='dev':
         savePath=outPath+'dev/'
         labelPath=devP
-        audio_list=validation_list        
+        audio_list=validation_list
     elif dataType == 'test' or dataType == 'eval' or dataType=='evaluation':
-        savePath=outPath+'eval/'    
+        savePath=outPath+'eval/'  
         labelPath=evalP
         audio_list=evaluation_list
         
@@ -269,98 +344,9 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,targe
     assert(labelPath != None)
     assert(savePath != None)
         
-    if inputType == 'log_fbank':
-        #data = 
-        some_function(input_type, audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration) # todo
+    if inputType == 'log_fbank':        
+        some_function(input_type, audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
+                      data_window,window_shift,augment,save)
     else:        
-        spectrograms(inputType,audio_list,labelPath, savePath,fft_size,win_size,hop_size,duration)
-        
-        
-                
-def spectrograms(input_type,data_list,labelPath,savePath,fft_size,win_size,hop_size,duration):
-        
-    from audio import compute_spectrogram              
-    spectrograms = list()
-    print('Computing the spectrograms ..')
-    
-    with open(data_list, 'r') as f:
-        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size, win_size, hop_size, duration) for file in f]         
-    #Save the data as .npz file in savePath
-    makeDirectory(savePath)
-    outfile = savePath+'/spec'
-    with open(outfile,'w') as f:
-        np.savez(outfile, spectrograms=spectrograms)
-        print('Finished computing spectrogram and saved inside: ', savePath)        
-        
-'''        
-def get_Data_and_labels(dataType, outPath, mean_std_file,specType='mag_spec',duration=3,targets=2,computeNorm=False,
-                        normType='global',normalise=True,fs=16000,fft_size=512,win_size=512,hop_size=160):
-    
-    #TODO : I might want to experiment with various input types, such as mel-spectrogram, chromogram etc
-    #specType='magnitude_spectrogram'  #default
-    #mel_spectrogram
-    #chromogram based on CQT transform
-    
-    print('The spectrogram savepath is: ', outPath)
-    
-    trainP='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/ASVspoof2017_train_dev/protocol/ASVspoof2017_train.trn'
-    devP='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/ASVspoof2017_train_dev/protocol/ASVspoof2017_dev.trl'
-    #evalP='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/ASVspoof2017_eval/ASVspoof2017_eval.trl'
-    evalP='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/labels/eval_genFirstSpoof_twoColumn.lab'
-
-    train_list = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/filelists/train.scp'
-    validation_list = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/filelists/dev.scp'
-    evaluation_list = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/filelists/eval_genFirstSpoof.scp'
-                
-    train_key  = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/labels/train.lab'  
-    validation_key = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/labels/dev.lab'    
-    evaluation_key = '/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/labels/eval_genFirstSpoof.lab'   
-    
-    splitPath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/filelists/eval_split_genuineFirst_Spoof/'    
-    labPath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/filelists/eval_label_split_genuineFirst_Spoof/label_'
-            
-    splitParts=7
-    
-    data=list()
-    labels=list()
-    
-    if dataType == 'train':
-        print('Now in trainining')
-        
-        mode='training'
-        savePath=outPath+'train/'       
-        data = spectrograms(train_list,savePath,fft_size,win_size,hop_size,duration)
-        print('After computing spectrogram in training set: ', len(data))
-        labels=get_labels_according_to_targets(trainP, targets)
-
-        if normalise:
-            data=normalise_data(data,mean_std_file,normType,computeNorm)   #mode)
-            
-    elif dataType == 'validation':
-        mode='testing'
-        savePath=outPath+'dev/'        
-        data = spectrograms(validation_list,savePath,fft_size,win_size,hop_size,duration)
-        labels=get_labels_according_to_targets(devP, targets)        
-        if normalise:
-            data=normalise_data(data,mean_std_file,normType,computeNorm)  #mode)
-    
-    elif dataType == 'test':        
-        mode='testing'
-        savePath=outPath+'eval/'
-        specPath = savePath
-
-        data = spectrograms(evaluation_list,savePath,fft_size,win_size,hop_size,duration)
-        labels=get_labels_according_to_targets(evalP, targets=2)  # For now just 2 targets on eval !
-        
-        if normalise:
-            data=normalise_data(data,mean_std_file,normType,computeNorm)  #mode)
-
-        
-    return data, labels                   
-
-def load_spectrograms(spec_file):
-    with np.load(spec_file) as f:
-        spec_data = f['spectrograms']
-        #spec_labels = f['labels']
-        return spec_data  #, spec_labels 
-'''
+        spectrograms(inputType,audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
+                     data_window,window_shift,augment,save)

@@ -5,10 +5,6 @@ import scipy.io.wavfile as wav
 import librosa
 import numpy as np
 
-#import librosa.display  #for display
-#import matplotlib.pyplot as plt
-
-#########################################################################################################################
 
 def compute_mean_std(arrays, axis=0, keepdims=False, dtype=np.float64, ddof=1):
     """
@@ -43,17 +39,14 @@ def update_audio_samples(fs, samples, threshold, remove=0.1, removeFlag=False):
     audioFile : the absolute path of the audio file
     threshold : is in seconds. Used to trim and append audio samples
     remove    : is in seconds. audio file to remove from start.Default is 100ms that is equal to 1600 raw samples
-                and avoid computational issues.                
+                and avoid computational issues.
     Output:
     trimmed/appended audio file of length given by threshold
     
     Threshold is in seconds. So convert it into samples first.
     If file is large, we throw away samples after the threshold else we copy the samples to match threshold
     '''
-        
-    #fs, samples = wav.read(audioFile)
-    # We do this using librosa in the calling function now
-    
+            
     #If removeFlag is set then remove samples from start
     if removeFlag:
         remove = int(remove * fs)         
@@ -78,6 +71,66 @@ def update_audio_samples(fs, samples, threshold, remove=0.1, removeFlag=False):
 
 #########################################################################################################################
 
+def compute_spectrogram(input_type,filename,fft_size=512, win_size=512, hop_size=160, duration=1,
+                        data_augment=True,minimum_length=3):
+    
+    #minimum_length=3 # during augmentation we make sure 3 seconds is minimum
+    if input_type != 'cqt_spec':
+        minimum_length = 2      
+    
+    samples, fs = librosa.load(filename, sr=None, dtype=np.float32)    
+    
+    if data_augment:       
+        audio_length = len(samples)/fs   
+        print('Audio length = ', audio_length)
+        
+        if audio_length < minimum_length:            
+            samples = update_audio_samples(fs,samples,minimum_length)            
+    else:       
+        #Truncate or append samples based on duration    
+        samples = update_audio_samples(fs,samples,duration)            
+                
+    if input_type == 'cqt_spec':
+        #print('take cqt transform')
+        # Using the default parameters ! need to check this part
+        D = np.abs(librosa.cqt(samples,fs))   #, hop_length=160, fmin=20,n_bins=96)    
+        D = np.log(np.maximum(D,1e-7))
+        
+        '''
+        In this case we ensure that each audio file is 3sec long by copying the contents
+        Therefore, D = 94x84, 94 is the time and 84 the frequency bins
+        As of now we used default parameters of librosa. May have to change it later
+        Hop_length is 512 which accounts to 32ms because FS=16000 Hz.
+        
+        In other words we will always have atleast 94X84 representation even if original audio is less than
+        3seconds. From data augmentation context, we can chose 1.5 seconds (half of it) as the orginal size and 
+        slide our window every one frame and generate lots of data !  
+        So, remember that under CQT when using Data augmentation, we will use 1.5 seconds time, i.e the matrix 
+        will be 47x84 (if we use the same default settings)
+        
+        '''                        
+    else:       
+        D = librosa.stft(samples,fft_size,hop_size,win_size) 
+        
+        if input_type == 'mag_spec': #power magnitude spectrogram
+            D= np.log(np.maximum((np.abs(D)**2), 1e-7))
+            
+        elif input_type == 'mel_spec':
+            # We compute energy-based mel spectrogram, thus power=1.0 else for power-based mel spectrogram
+            # pass power=2.0
+            
+            D = librosa.feature.melspectrogram(samples, sr=fs,n_fft=fft_size,hop_length=hop_size,
+                                                      power=1.0,n_mels=80)
+            D = np.log(np.maximum(D,1e-7))
+            
+    r,c = D.shape
+        
+    if data_augment:
+        return np.transpose(D)
+    else:
+        return np.transpose(D[:, 0:c-1])   # without data_augmentation we return dropping one frame
+        
+
 def minMaxNormalize(data, columnAxisNormalise=False):
     '''
     data is a matrix of size [RxC] where R is the number of rows and C the columns
@@ -97,102 +150,8 @@ def minMaxNormalize(data, columnAxisNormalise=False):
         
     return (data-mn)/(mx-mn)
 
-#########################################################################################################################
-
-def zNormalizeData(data, columnAxisNormalise=False):
-    '''
-    Perform zero mean and unit variance normalization.
-    Remove mean from each data point and divide by standard deviation. As a result, the data would lose the origin and 
-    scale information as it will all have zero mean and unit variance.
-    '''
-    # this is incorrect.
-    # at the moment using Jan Schlüter znorm.py
-    
-    if columnAxisNormalise:
-        mn = np.mean(data, axis=0)
-        std = np.std(data, axis=0)        
-    else:
-        mn = np.mean(data)
-        std = np.std(data)
-        
-    return (data-mn)/std    
 
 #########################################################################################################################
-def compute_spectrogram(input_type, filename, fft_size=512, win_size=512, hop_size=160, duration=1):
-        
-        
-    samples, sr = librosa.load(filename, sr=None, dtype=np.float32)    
-        
-    #Truncate or append samples based on duration
-    samples = update_audio_samples(sr,samples,duration)
-       
-    #Take the FFT
-    D = librosa.stft(samples,fft_size,hop_size,win_size)    
-    
-    if input_type == 'mag_spec': #power magnitude spectrogram        
-        D= np.log(np.maximum((np.abs(D)**2), 1e-7))
-    elif input_type == 'mel_spec':
-        print('to do for mel spectrogram code')
-    elif input_type == 'cqt_spec':
-        print('to do for cqt spectrogram code')
-                    
-    r,c = D.shape
-    
-    #Let us return the spectrogram matrix in timeXfrequency format by taking transpose
-    return np.transpose(D[:, 0:c-1])
-
-
-def compute_spectrogramOLD(filename, fft_size=512, win_size=512, hop_size=160, duration=1):
-        
-    """
-    Input parameters:
-    filename  = audio file to compute normalized log power spectrogram    
-    fft_size  = fft window size is 2048 by default as we want to give emphasis on frequency.
-    win_size  = fft_size
-    hop_size  = 10ms that corresponds to 160 samples
-    duration  = 3second by default.   
-    
-    Output:
-    Log normalized power magnitude spectrogram of the audio "filename"
-    
-    Defaults:
-    fs       = 16000  #16khz
-    fft_size = 2048   #128ms 
-    win_size = 2048   #128ms
-    hop_size = 160    #10ms
-    duration = 3      #3000ms    
-    """          
-    
-    #Truncate or append samples based on duration
-    samples = update_audio_samples(filename, duration)
-               
-    #Take the FFT
-    D = librosa.stft(samples, n_fft=fft_size, hop_length=hop_size, win_length=win_size)
-            
-    #Take the power of the magnitude spectrum. Just take the square.
-    D = np.square(np.abs(D))
-    
-    #Note that many audio files contains many zeros in initial samples which causes issues 
-    #Instead of removing first few samples that are mostly 0.
-    #Replace all 0's of File with a small value 1e-10 in pythonic way  
-    
-    #D[D == 0] = 1   # Replacing all 0's by 1 will ultimately make it zero when we take log
-                     # because log(1)=0
-    
-    ## Changed as per suggestion by Saumitra
-    print('Replacing tiny number and zeros by 1e-7')
-    D = np.maximum(D,1e-7)
-    
-    #Take the log
-    try:
-        D = np.log(D)
-    except e:
-        print('Cannot take np.log for File %s ' %(filename))
-        
-    r,c = D.shape
-    
-    #Let us return the spectrogram matrix in timeXfrequency format by taking transpose    
-    return np.transpose(D[:, 0:c-1])
 
 '''
 The function used by Russians for computing spectrogram
