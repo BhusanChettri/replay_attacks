@@ -25,14 +25,14 @@ import audio
 import dataset
 import model
   
-def trainCNN_on_trainData():
+def for_looping():
 
     #CNN Training parameters
     activation = 'mfm'  #choose activation: mfm,elu, relu, mfsoftmax, tanh ?
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
     batch_size = 32
-    epochs = 1 #2000
+    epochs = 2000
     
     # Regularizer parameters
     use_lr_decay=False        #set this flag for LR decay
@@ -48,17 +48,16 @@ def trainCNN_on_trainData():
     epsilon=0.1
     momentum=0.95
     #dropout1=1.0                 #for input to first FC layer  
-    #dropout2=1.0                 #for intermediate layer input    
-    drops=[1.0,0.5]           # We train two networks for each category, first without any dropout and with 50%
+    #dropout2=1.0         #for intermediate layer input    
+    drops=[0.5]           # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
     
     architectures = [1]
     trainingSize = [1]   #in seconds
     lr= 0.0001
            
-    #targets=2
-    target_list=[2,4]
-        
+    targets=2
+           
     #specType='mag_spec'     #lets try loading mag_spec    
     #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
     #inputTypes=['mag_spec']    # Not Run yet
@@ -103,16 +102,12 @@ def trainCNN_on_trainData():
             print('Computing Mean_std file ..')
             dataset.compute_global_norm(tD,mean_std_file)
                 
-        tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level      
-        tD = dataset.normalise_data(tD,mean_std_file,'global_mv')    # global
-                
+               
         # Load dev data, labels and perform norm
         devD,devL = dataset.load_data(outPath+'dev/')
         devL = dataset.get_labels_according_to_targets(devL, targets)        
         assert(len(devD)==len(devL))
                 
-        devD = dataset.normalise_data(devD,mean_std_file,'utterance')
-        devD = dataset.normalise_data(devD,mean_std_file,'global_mv')                                
                 
         ### We are training on TRAIN set and validating on DEV set        
         t_data = tD
@@ -124,16 +119,16 @@ def trainCNN_on_trainData():
 
         for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
-            penalty=0.001  #this is not used thought at the moment
+            #penalty=0.001  #this is not used thought at the moment
             
-            #for penalty in lambdas:
-            for targets in target_list:
+            for penalty in lambdas:
+            #for targets in target_list:
                 
                 #hyp_str ='cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
-                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)
+                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)+'_targets'+str(targets)
                 
-                log_dir = tensorboardPath+ '/model1_max2000epochs/'+ hyp_str
-                model_save_path = modelPath + '/model1_max2000epochs/'+ hyp_str
+                log_dir = tensorboardPath+ '/LOOP_TEMP/'+ hyp_str
+                model_save_path = modelPath + '/LOOP_TEMP/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        

@@ -32,7 +32,7 @@ def trainCNN_on_trainData():
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
     batch_size = 32
-    epochs = 1 #2000
+    epochs = 2000
     
     # Regularizer parameters
     use_lr_decay=False        #set this flag for LR decay
@@ -48,17 +48,16 @@ def trainCNN_on_trainData():
     epsilon=0.1
     momentum=0.95
     #dropout1=1.0                 #for input to first FC layer  
-    #dropout2=1.0                 #for intermediate layer input    
-    drops=[1.0,0.5]           # We train two networks for each category, first without any dropout and with 50%
+    #dropout2=1.0         #for intermediate layer input    
+    drops=[0.5]           # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
     
     architectures = [1]
     trainingSize = [1]   #in seconds
     lr= 0.0001
            
-    #targets=2
-    target_list=[2,4]
-        
+    targets=4
+           
     #specType='mag_spec'     #lets try loading mag_spec    
     #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
     #inputTypes=['mag_spec']    # Not Run yet
@@ -124,13 +123,13 @@ def trainCNN_on_trainData():
 
         for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
-            penalty=0.001  #this is not used thought at the moment
+            #penalty=0.001  #this is not used thought at the moment
             
-            #for penalty in lambdas:
-            for targets in target_list:
+            for penalty in lambdas:
+            #for targets in target_list:
                 
                 #hyp_str ='cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
-                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)
+                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)+'_targets'+str(targets)
                 
                 log_dir = tensorboardPath+ '/model1_max2000epochs/'+ hyp_str
                 model_save_path = modelPath + '/model1_max2000epochs/'+ hyp_str

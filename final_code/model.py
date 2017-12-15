@@ -410,7 +410,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             saved = saver.save(sess, os.path.join(model_path,"bestModel.ckpt"))
             logfile.write('******************************************************'+'\n\n')
             logfile.write("Epoch " +str(epoch)+", model is best so far. We save it.." + '\n')
-                        
+            '''            
             print('Also we compute Training loss of this best Model for records !!')
             train_batch_generator = dataset.iterate_minibatches(train_data, train_labels, batch_size, shuffle=False)
             avg_loss, avg_acc = testonValidationData(sess,train_batch_generator, total_batches,input_data,true_labels,
@@ -422,6 +422,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             
             logfile.write("The Epoch " +str(epoch)+", has training Avg CE loss = "+"{:.5f}".format(avg_loss)+'\n')
             logfile.write('******************************************************'+'\n\n')
+            '''
 
             
         else:
@@ -454,7 +455,8 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
     Using the trained model now we perform scoring and feature extraction on train+dev dataset. We will test on eval data
     later on. Also note that we do utterance based + global mv normalization 
     '''
-        
+    
+    '''
     if input_type == 'cqt_spec':
         duration=trainSize         # THIS WILL  THROW ERROR FOR SURE !!
     else:
@@ -467,11 +469,15 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
     featTypes=['scores','bottleneck']
     
     for featType in featTypes:
-        print('Using trained model we extract ', featType)
+        print('\n\n Using trained model we extract ', featType)
         extractor.get_scores_and_features(model_path,batch_size,init_type,activation,normType,normalise,architecture,
-                                          input_type,targets,fftSize,duration,padding,featType)
+                                          input_type,targets,fftSize,duration,padding,featType,augment)
         
     # Once we are done with extraction of score and bottleneck features return    
+    '''
+    # The above is yet to be tested so not running now !!
+    
+    
     return train_ce_loss, val_ce_loss, train_accuracy, val_accuracy
 
 
@@ -480,14 +486,6 @@ def testonValidationData(sess, test_batch_generator, total_batches,input_data, t
     
     loss = list()
     acc = list()
-    #tot = total_batches
-            
-    ## During training time, lets use only 20% data for validation of parameters
-    ## Every time it will be randomized. With data augmentation 20% is still a huge numbers
-    #if augment:        
-    #    total_batches = int(valPercentage*total_batches) 
-    
-    #print('For validation we use only: ' + str(total_batches) + ' examples out of total: ' + str(tot))
     
     for k in range(total_batches):
         data, labels = next(test_batch_generator)

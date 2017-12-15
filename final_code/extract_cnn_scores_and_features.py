@@ -49,8 +49,10 @@ def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file
     print('Extracting ' + featType + ' for the ' + dataType + 'set')
     
     data = dataset.load_data(inputPath+ dataType+'/')
+    
     data = dataset.normalise_data(data,mean_std_file,'utterance')
     data = dataset.normalise_data(data,mean_std_file,'global_mv')
+    
     labels=dataset.get_labels_according_to_targets(protocal, targets)
         
     featureList=getFeatures(featType,dataType,data,labels,batch_size,model_path,n_model,activation,init_type,targets,
@@ -67,7 +69,7 @@ def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file
 
 def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activation='elu',normType='global',normalise=True,
                             architecture=2,specType='mag_spec',targets=2,fftSize=256,duration=1,padding=True,
-                            featType='scores'):
+                            featType='scores',augment=False):
     
     basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
     trainProtocal=basePath+'/ASVspoof2017_train_dev/protocol/ASVspoof2017_train.trn'
@@ -75,9 +77,13 @@ def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activat
     evalProtocal=basePath+'/labels/eval_genFirstSpoof_twoColumn.lab'
     
     mode='testing'
-    n_model = None 
-    spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+    n_model = None
     
+    if augment:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    else:
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
+       
     #trainSize=duration
     inputPath = spectrogramPath + specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
     mean_std_file = inputPath+'train/mean_std.npz'

@@ -19,7 +19,9 @@ duration=4       #1
 padding=True
 batch_size = 10  #50 #100
 
+augment=False 
+
 featType=['scores']   #,'bottleneck']   # we just want the CNN predictions here !
 
 extractor.get_scores_and_features(model_path,batch_size,init_type,activation,normType,normalise,architecture,specType,
-                                  targets,fftSize,duration,padding,featType) 
+                                  targets,fftSize,duration,padding,featType,augment) 

@@ -123,8 +123,8 @@ def make_data_cqt_spectrogram():
     #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     #augment,save)        
     
-#make_data_mag_spectrogram()
-make_data_mel_spectrogram()
-#make_data_cqt_spectrogram()
+make_data_mag_spectrogram()
+#make_data_mel_spectrogram()
+make_data_cqt_spectrogram()
 
 
