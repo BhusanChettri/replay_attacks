@@ -20,11 +20,12 @@ def make_data_mag_spectrogram():
     
     augment=True
     data_window=100   # for FFT based and for cqt = 
-    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    window_shift=100   #each frame is 32ms, 10 window shift corresponds to 320ms
     save=True
+    #minimum_length=1  # in seconds
     
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'
     else:
         spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
         
@@ -55,12 +56,13 @@ def make_data_mel_spectrogram():
     duration=1
     inputType='mel_spec'
     augment=True
-    data_window=100   # for FFT based and for cqt =    
-    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    data_window=100    # for FFT based and for cqt =    
+    window_shift=100   #each frame is 32ms, 10 window shift corresponds to 320ms
     save=True
+    #minimum_length=1  #in seconds
     
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'
     else:
         spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'            
         
@@ -93,14 +95,15 @@ def make_data_cqt_spectrogram():
 
     duration=1
     
-    inputType='cqt_spec'
+    inputType='cqt_spec'  #1second correspond to (32, 84) spectrogram in current default configurations
     augment=True
-    data_window=47    # Using default configurations for cqt, window = 47 
-    window_shift=10   #each frame is 32ms, 10 window shift corresponds to 320ms
+    data_window=32    
+    window_shift=32   # each frame is 32ms, 32 window shift means we are shifting by 1sec
+                      # we do not want to duplicate many copies. See compute_spectrogram function in audio.py                          
     save=True
-
+    
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'
     else:
         spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
     
@@ -109,9 +112,9 @@ def make_data_cqt_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
     print('Preparing the validation data')
@@ -123,7 +126,7 @@ def make_data_cqt_spectrogram():
     #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     #augment,save)        
     
-make_data_mag_spectrogram()
+#make_data_mag_spectrogram()
 #make_data_mel_spectrogram()
 make_data_cqt_spectrogram()
 

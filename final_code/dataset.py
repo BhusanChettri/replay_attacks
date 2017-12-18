@@ -253,8 +253,8 @@ def augment_data(data,label,data_window=100,input_type='mel_spec',shift=10):
 
 
 def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_size,duration,data_window=100,
-                 window_shift=10,augment=True,save=True):
-                
+                 window_shift=10,augment=True,save=True,minimum_length=1):
+                    
     from audio import compute_spectrogram              
 
     spectrograms = list()
@@ -262,7 +262,8 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
         
     print('Computing the ' + input_type + ' spectrograms !!')    
     with open(data_list, 'r') as f:
-        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size,win_size,hop_size,duration,augment) for file in f]                 
+        spectrograms = [compute_spectrogram(input_type,file.strip(),fft_size,win_size,hop_size,duration,augment,minimum_length)
+                        for file in f]                 
     # Get the labels into a list and save it along with the spectrograms
     with open(labelFile,'r') as f:
         #labels = [1 if line.strip().split(' ')[1] == 'genuine' else 0 for line in f]
@@ -295,7 +296,8 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
     # While loading spectrogram check if its augmented one or simple one    
     
 def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
-                 fs=16000,fft_size=512,win_size=512,hop_size=160,data_window=100,window_shift=10,augment=True,save=True): 
+                 fs=16000,fft_size=512,win_size=512,hop_size=160,data_window=100,window_shift=10,
+                 augment=True,save=True,minimum_length=1): 
         
     print('The spectrogram savepath is: ', outPath)
     
@@ -341,7 +343,7 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
         
     if inputType == 'log_fbank':        
         some_function(input_type, audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
-                      data_window,window_shift,augment,save)
+                      data_window,window_shift,augment,save,minimum_length)
     else:        
         spectrograms(inputType,audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
-                     data_window,window_shift,augment,save)
+                     data_window,window_shift,augment,save,minimum_length)
