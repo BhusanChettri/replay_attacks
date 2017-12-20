@@ -67,11 +67,11 @@ def trainCNN_on_trainData():
     padding=True
     
     augment = True 
-    trainPercentage=0.25    #Each training epoch will see only 30% of the original data at random !
-    valPercentage=0.1
+    trainPercentage=0.8               #Each training epoch will see only 80% of the original data at random !
+    valPercentage=0.3                 #30% only used at random for validation
     
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'
     else:
         spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
             
@@ -117,7 +117,7 @@ def trainCNN_on_trainData():
         t_data = tD
         t_labels = tL
         v_data = devD
-        v_labels = devL                
+        v_labels = devL           
         
         print('Training model on ', specType)
 
@@ -130,8 +130,8 @@ def trainCNN_on_trainData():
                                 
                 hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)+'_targets'+str(targets)
                 
-                log_dir = tensorboardPath+ '/model1_max2000epochs/'+ hyp_str
-                model_save_path = modelPath + '/model1_max2000epochs/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_max2000epochs_1/'+ hyp_str
+                model_save_path = modelPath + '/model1_max2000epochs_1/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        
@@ -151,5 +151,14 @@ trainCNN_on_trainData()
 '''
 TODO:
 Before running the full model, first test with 1 epoch to ensure that the inside-code feature extraction and scoring pipeline is working well. Once it is okay, run these models in full epochs of 2000 !!
+'''
+
+
+
+'''
+NOTE:
+model1_max2000epochs : was experiments related to creating massive amount of duplicate data of 1s
+model1_max2000epochs_1 : using new strategy depending upon original length, making minimal copy !!
+
 '''
 

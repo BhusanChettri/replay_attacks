@@ -74,6 +74,7 @@ def cnnModel1(input_type,trainSize,input_placeholder,activation,init,targets,fft
         in_fc2 = 256
         in_fc3 = 256
         in_outputLayer = 256
+    print('======================== CNN ARCHITECTURE ==============================\n')    
                                
     #Convolution layer1,2,3    
     conv1,w1,b1 = conv_layer(input_placeholder, [3,f,1,128], [128], [1,1,1,1],'conv1',padding,activation,init)
@@ -92,7 +93,7 @@ def cnnModel1(input_type,trainSize,input_placeholder,activation,init,targets,fft
     print('Conv2 ', conv3)
     
     if input_type == 'cqt_spec':
-        time_dim = 47
+        time_dim = 32
     else:
         time_dim = t*100    
     
@@ -139,6 +140,7 @@ def cnnModel1(input_type,trainSize,input_placeholder,activation,init,targets,fft
     bias_list.append(b7)            
                 
     print('Output layer shape = ', output.shape)
+    print('======================== CNN ARCHITECTURE ==============================\n')
     
     
     return fc3, output, weight_list, activation_list, bias_list

@@ -238,8 +238,9 @@ def augment_data(data,label,data_window=100,input_type='mel_spec',shift=10):
     window = data_window  
     
     #label = label_line.split(' ')[1]
+    print('window and t are %d,%d' %(data_window,t))
     
-    assert(t > window)
+    assert(t > window or t==window)
             
     start=0    
     for i in range(window, t, shift):
@@ -347,3 +348,25 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
     else:        
         spectrograms(inputType,audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
                      data_window,window_shift,augment,save,minimum_length)
+        
+        
+def get_random_data(dataPath,batch_size,keepPercentage):
+    
+    data,labels= load_data(dataPath)
+    total_batches = int(len(data)/batch_size)
+    t=total_batches
+    
+    batch_generator = iterate_minibatches(data,labels,batch_size,shuffle=True)    
+    total_batches = int(keepPercentage*total_batches)
+    
+    print('After randomizing, total batches and kept batches: %d,%d' %(t,total_batches))
+    
+    dataList = list()
+    labelList = list()
+    
+    for j in range(total_batches):            
+        data, labels = next(batch_generator)
+        dataList.extend(data)
+        labelList.extend(labels)
+    
+    return dataList,labelList

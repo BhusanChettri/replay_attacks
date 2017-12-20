@@ -32,7 +32,7 @@ def trainCNN_on_trainData():
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
     batch_size = 32
-    epochs = 2000
+    epochs = 1000
     
     # Regularizer parameters
     use_lr_decay=False        #set this flag for LR decay
@@ -47,9 +47,9 @@ def trainCNN_on_trainData():
     b2=0.999
     epsilon=0.1
     momentum=0.95
-    #dropout1=1.0                 #for input to first FC layer  
-    #dropout2=1.0         #for intermediate layer input    
-    drops=[0.5]           # 50% dropout the inputs of FC layers
+    dropout1=0.1                  #for input to first FC layer
+    dropout2=0.2                  #for intermediate layer input    
+    drops=[0.3]                   # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
     
     architectures = [1]
@@ -63,15 +63,15 @@ def trainCNN_on_trainData():
     #inputTypes=['mag_spec']    # Not Run yet
     #inputTypes=['cqt_spec']    # Not Run yet
     
-    inputTypes=['mel_spec','mag_spec','cqt_spec']   #CQT may throw error during scoring in model.py
+    inputTypes=['mag_spec','cqt_spec','mel_spec']
     padding=True
     
     augment = True 
-    trainPercentage=0.25    #Each training epoch will see only 30% of the original data at random !
-    valPercentage=0.1
-    
+    trainPercentage=1.0    #Each training epoch will see only 50% of the original data at random !
+    valPercentage=0.8   
+            
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'
     else:
         spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
             
@@ -81,14 +81,16 @@ def trainCNN_on_trainData():
                 
     #for duration in trainingSize:
     duration=1
+    fftSize=512
+    
     for specType in inputTypes:
                
-        if specType == 'mel_spec' or specType == 'cqt_spec':            
-            fftSize=512
-        else:            
-            fftSize=256
+        #if specType == 'mel_spec' or specType == 'cqt_spec':            
+        #    fftSize=512
+        #else:            
+        #    fftSize=256
                 
-        print('Now loading the data with FFT size: ', fftSize)
+        #print('Now loading the data with FFT size: ', fftSize)
         outPath = spectrogramPath +specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
         mean_std_file = outPath+'train/mean_std.npz'
                 
@@ -101,16 +103,18 @@ def trainCNN_on_trainData():
         if not os.path.exists(mean_std_file):
             print('Computing Mean_std file ..')
             dataset.compute_global_norm(tD,mean_std_file)
-                
-        tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level      
+            
+        # We will try utterance based norm later   
+        #tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level      
         tD = dataset.normalise_data(tD,mean_std_file,'global_mv')    # global
-                
-        # Load dev data, labels and perform norm
-        devD,devL = dataset.load_data(outPath+'dev/')
+                        
+        # Now take only 80% of the new augmented data to use for validation
+        # Just to save some time during training
+        devD,devL = dataset.get_random_data(outPath+'dev/',batch_size,valPercentage)                
         devL = dataset.get_labels_according_to_targets(devL, targets)        
-        assert(len(devD)==len(devL))
-                
-        devD = dataset.normalise_data(devD,mean_std_file,'utterance')
+        assert(len(devD)==len(devL))                                
+                        
+        #devD = dataset.normalise_data(devD,mean_std_file,'utterance')
         devD = dataset.normalise_data(devD,mean_std_file,'global_mv')                                
                 
         ### We are training on TRAIN set and validating on DEV set        
@@ -127,12 +131,11 @@ def trainCNN_on_trainData():
             
             for penalty in lambdas:
             #for targets in target_list:
+                                                
+                hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)#+'_targets'+str(targets)
                 
-                #hyp_str ='cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
-                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)+'_targets'+str(targets)
-                
-                log_dir = tensorboardPath+ '/model1_max2000epochs/'+ hyp_str
-                model_save_path = modelPath + '/model1_max2000epochs/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_max1000epochs/'+ hyp_str
+                model_save_path = modelPath + '/model1_max1000epochs/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        
@@ -140,13 +143,13 @@ def trainCNN_on_trainData():
                                                 
                 tLoss,vLoss,tAcc,vAcc=model.train(specType,architecture,fftSize,padding,duration,t_data,t_labels,
                                                   v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,
-                                                  optimizer_type,dropout,dropout,dropout,model_save_path,log_dir,
+                                                  optimizer_type,dropout1,dropout2,dropout,model_save_path,log_dir,
                                                   logfile,wDecayFlag,penalty,applyBatchNorm,init_type,epochs,batch_size,
-                                                  targets,augment,trainPercentage,valPercentage)                                                                                                                                        
+                                                  targets,augment)#,trainPercentage,valPercentage)                                                                                                                                        
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')
-                plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
-                                          
+                #plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
+                        
 trainCNN_on_trainData()
 
 '''

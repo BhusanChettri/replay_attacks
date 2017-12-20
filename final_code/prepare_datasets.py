@@ -11,14 +11,14 @@ from helper import makeDirectory
 def make_data_mag_spectrogram():
     
     fs=16000
-    fft_size=256  # 512
-    win_size=256  #512
+    fft_size=512   #256  # 512
+    win_size=512   #256  #512
     hop_size=160
 
     duration=1    
     inputType='mag_spec'
     
-    augment=True
+    augment=True #True
     data_window=100   # for FFT based and for cqt = 
     window_shift=100   #each frame is 32ms, 10 window shift corresponds to 320ms
     save=True
@@ -33,19 +33,19 @@ def make_data_mag_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
-    #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #augment,save)
+    print('Preparing the test data')
+    prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    augment,save)
     
 def make_data_mel_spectrogram():
     fs=16000
@@ -70,19 +70,19 @@ def make_data_mel_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
-    #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #augment,save)    
+    print('Preparing the test data')
+    prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    augment,save)    
 
 def make_data_cqt_spectrogram():
     # Note that in audio.py, the spectrogram for CQT uses default parameters. Later we may want to think over this !
@@ -98,8 +98,7 @@ def make_data_cqt_spectrogram():
     inputType='cqt_spec'  #1second correspond to (32, 84) spectrogram in current default configurations
     augment=True
     data_window=32    
-    window_shift=32   # each frame is 32ms, 32 window shift means we are shifting by 1sec
-                      # we do not want to duplicate many copies. See compute_spectrogram function in audio.py                          
+    window_shift=30   # keep 30 frames as shift (making 32 will discard lot of frames)  
     save=True
     
     if augment:
@@ -117,17 +116,16 @@ def make_data_cqt_spectrogram():
     #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
-    #print('Preparing the test data')
-    #prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #augment,save)        
+    print('Preparing the test data')
+    prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    augment,save)        
     
-#make_data_mag_spectrogram()
-#make_data_mel_spectrogram()
+make_data_mag_spectrogram()
+make_data_mel_spectrogram()
 make_data_cqt_spectrogram()
-
 

@@ -91,6 +91,8 @@ def compute_spectrogram(input_type,filename,fft_size=512, win_size=512, hop_size
         D = np.abs(librosa.cqt(samples,fs))   #, hop_length=160, fmin=20,n_bins=96)    
         D = np.log(np.maximum(D,1e-7))
         
+        #print('After CQT, shape = ', D.T.shape)
+        
         '''
         #1second correspond to (32, 84) spectrogram in current default configurations
         
@@ -105,8 +107,7 @@ def compute_spectrogram(input_type,filename,fft_size=512, win_size=512, hop_size
         So, remember that under CQT when using Data augmentation, we will use 1.5 seconds time, i.e the matrix 
         will be 47x84 (if we use the same default settings)
         '''
-        
-                                
+                                        
     else:       
         D = librosa.stft(samples,fft_size,hop_size,win_size) 
         

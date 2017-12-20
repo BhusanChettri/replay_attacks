@@ -43,27 +43,32 @@ def write_scores_to_file(prediction, after_decimal=5, outfile='prediction.txt'):
             f.write("%.4f\n" % (score))                   
             
 def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file,outBase,batch_size=100,activation='elu',
-                   init_type='xavier',targets=2,fftSize=256,architecture=2,duration=1,padding=True,n_model=None):
+                   init_type='xavier',targets=2,fftSize=256,architecture=2,duration=1,padding=True,n_model=None,
+                   inputType='mag_spec',augment=True):
     
     # Extract Features from Training set
-    print('Extracting ' + featType + ' for the ' + dataType + 'set')
+    #print('Extracting ' + featType + ' for the ' + dataType + 'set')
     
-    data = dataset.load_data(inputPath+ dataType+'/')
+    print('outBase in run_prediction is: ', outBase)
     
-    data = dataset.normalise_data(data,mean_std_file,'utterance')
-    data = dataset.normalise_data(data,mean_std_file,'global_mv')
     
-    labels=dataset.get_labels_according_to_targets(protocal, targets)
+    data,lab = dataset.load_data(inputPath+ dataType+'/')
+    
+    #data = dataset.normalise_data(data,mean_std_file,'utterance')
+    data = dataset.normalise_data(data,mean_std_file,'global_mv')    
+    labels = dataset.get_labels_according_to_targets(lab, targets)
         
-    featureList=getFeatures(featType,dataType,data,labels,batch_size,model_path,n_model,activation,init_type,targets,
-                          fftSize,padding,architecture,duration)
-    
+    featureList=getFeatures(featType,inputType,data,labels,batch_size,model_path,n_model,activation,init_type,targets,
+                          fftSize,padding,architecture,duration,augment)
+            
     if featType == 'bottleneck':
-        makeDirectory(outBase+dataType)       
-        saveFeatures(featureList,outBase+dataType+'/features')
+        makeDirectory(outBase+'/features/')#  dataType)       
+        saveFeatures(featureList,outBase+'/features/'+dataType)   #saves as train.npz, dev.npz etc
+    elif featType == 'scores':
+        makeDirectory(outBase+'/predictions/')
+        write_scores_to_file(featureList, outfile=outBase+'/predictions/'+ str(dataType)+'.txt')
     else:
-        makeDirectory(outBase)
-        write_scores_to_file(featureList, outfile=outBase+dataType+'_prediction.txt')
+        print('PLEASE CHOSE CORRECT PARAM !!')
 
 #--------------------------------------------------------------------------------------------------------------------
 
@@ -79,30 +84,34 @@ def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activat
     mode='testing'
     n_model = None
     
+    print('The specType passed is: ', specType)
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'        
     else:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+    
        
     #trainSize=duration
     inputPath = spectrogramPath + specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+    
+    print('Caution: We have used train-set computed mean_std file at the moment !! Be sure !!')
     mean_std_file = inputPath+'train/mean_std.npz'
     
-    for feat in featType:
-        outputPath = model_path+'/'+feat+'/'    # Where to save the features ?
+    for feat in featType:        
+        outputPath = model_path
         
         print('Performing ' + feat + ' extraction using trained model on train, dev and eval data')
 
         run_prediction(model_path,feat,'train',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-                       init_type,targets,fftSize,architecture,duration,padding,n_model)
+                       init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)                
         
         run_prediction(model_path,feat,'dev',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-                       init_type,targets,fftSize,architecture,duration,padding,n_model)
+                       init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
         
-        #print('Now extracting on Eval set !')
+        print('Now extracting on Eval set !')
     
-        #run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-        #               init_type,targets,fftSize,architecture,duration,padding,n_model)
+        run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
+                       init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
         
 #-----------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------

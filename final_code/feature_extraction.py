@@ -102,34 +102,27 @@ def computeModelScore(model_prediction, apply_softmax=True):
 
 #-------------------------------------------------------------------------------------------------------------    
 
-def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test_labels, model_path, n_model, activation, 
-                         init_type,targets,fftSize,padding,batch_size=1):
+def extract_CNN_Features(featType,inputType,architecture,trainSize,test_data,test_labels, model_path,n_model, activation, 
+                         init_type,targets,fftSize,padding,batch_size,augment):
     
     # Note: The network that was trained with 4 targets for instance cannot be used with 2 targets to extract features
     # as I was thinking. Things messes up. Therefore we could only use it for feature extraction. In case of eval data
     # as we do not have labels, just create dummy labels of 4 dimension for feature extraction.       
-
-    if dataType=='test':   ##This is just a trick for extracting features from CNN
-        targets=2
-    
-    #print('Datatype is = ', dataType)
-    #print('Targets = ', targets)
         
     print('Reset TF graph and load trained models and session..')        
-    tf.reset_default_graph()
-    
+    tf.reset_default_graph()    
     t = trainSize*100  #Default is this
                                   
-    if input_type=='mel_spec':
+    if inputType=='mel_spec':
         f= 80
-    elif input_type=='cqt_spec':
+    elif inputType=='cqt_spec':
         f = 84        
         if augment:
-            t=47
+            t=32
         else:
-            t=47     ## This needs to be fixed. At the moment for CQT, we have 47 as time dimension
+            t=32     ## This needs to be fixed. At the moment for CQT, we have 47 as time dimension
         
-    elif input_type=='mag_spec':
+    elif inputType=='mag_spec':
         
         if fftSize == 512:
             f = 257
@@ -139,7 +132,7 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
             f = 513
         elif fftSize == 2048: 
             f = 1025
-                
+                                    
     input_data = tf.placeholder(tf.float32, [None,t, f,1])  #make it 4d tensor
     true_labels = tf.placeholder(tf.float32, [None,targets], name = 'y_input')
             
@@ -160,17 +153,10 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
     num_classes=targets
     
     if architecture == 1:
-        extractor, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel1(dataType,trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
+        extractor, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel1(inputType,trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         
-    elif architecture == 2:
-        extractor, model_prediction,network_weights,activations,biases= nn_b.cnnModel1(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
-        
-    elif architecture == 3:
-        extractor, model_prediction,network_weights,activations,biases= nn_b.cnnModel2(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
-        
-    elif architecture == 5:
-        extractor, model_prediction,network_weights,activations,biases= nn_r.cnnModel5(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
-
+    else:
+        print('FIX THE ARCHITECTURE DEFINITION !!!! ')
 
     modelScore = computeModelScore(model_prediction, apply_softmax=True)    
     
@@ -199,8 +185,9 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
         else:
             scores = sess.run([modelScore] , feed_dict={input_data:data, true_labels:labels,keep_prob1: 1.0,
                                                                 keep_prob2: 1.0, keep_prob3: 1.0})            
-            print('Printing 5 scores in this batch:')
-            print(scores[0:5])
+            #print('Printing 5 scores in this batch:')                     
+            sc=scores[0][0]
+            print('scores: ',sc)
             scoreList.append(scores) # use append only
             
     if featType == 'bottleneck':
@@ -210,8 +197,8 @@ def extract_CNN_Features(featType,dataType,architecture,trainSize,test_data,test
     
 #-------------------------------------------------------------------------------------------------------------
 
-def getFeatures(featType,dataType,data,labels,batch_size,model_path,n_model,activation,init_type,targets,fftSize,padding,
-                architecture,trainSize):
+def getFeatures(featType,inputType,data,labels,batch_size,model_path,n_model,activation,init_type,targets,fftSize,padding,
+                architecture,trainSize,augment):
 
     featureList=[]    
     dataList, labelList = getSplittedDataSet(data, labels, batch_size)    
@@ -226,8 +213,8 @@ def getFeatures(featType,dataType,data,labels,batch_size,model_path,n_model,acti
         else:
             batch = batch_size
             
-        feats = extract_CNN_Features(featType,dataType,architecture,trainSize,dataList[i],labelList[i],
-                                     model_path,n_model,activation,init_type,targets,fftSize,padding,batch)
+        feats = extract_CNN_Features(featType,inputType,architecture,trainSize,dataList[i],labelList[i],
+                                     model_path,n_model,activation,init_type,targets,fftSize,padding,batch,augment)
                         
         featureList.extend(feats)  #use extend to keep in same list
                                             
