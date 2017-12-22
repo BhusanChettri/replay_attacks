@@ -66,7 +66,7 @@ def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file
         saveFeatures(featureList,outBase+'/features/'+dataType)   #saves as train.npz, dev.npz etc
     elif featType == 'scores':
         makeDirectory(outBase+'/predictions/')
-        write_scores_to_file(featureList, outfile=outBase+'/predictions/'+ str(dataType)+'.txt')
+        write_scores_to_file(featureList, outfile=outBase+'/predictions/'+ str(dataType)+'_prediction.txt')
     else:
         print('PLEASE CHOSE CORRECT PARAM !!')
 
@@ -85,14 +85,25 @@ def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activat
     n_model = None
     
     print('The specType passed is: ', specType)
+            
     if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'        
+        if str(specType).endswith('spec'): 
+            spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/1sec_shift/'    
+        else:
+            spectrogramPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/features_1sec_shift/'  
+      
     else:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'
+        if str(specType).endswith('spec'): 
+            spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'    
+        else:
+            spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features/'     
+                                       
     
-       
-    #trainSize=duration
-    inputPath = spectrogramPath + specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+    if str(specType).endswith('spec'):
+        inputPath = spectrogramPath + specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+    else:
+        inputPath = spectrogramPath + specType + '/'
+        
     
     print('Caution: We have used train-set computed mean_std file at the moment !! Be sure !!')
     mean_std_file = inputPath+'train/mean_std.npz'

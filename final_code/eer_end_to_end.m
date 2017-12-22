@@ -8,9 +8,9 @@ clear all;
 addpath(genpath('/import/c4dm-datasets/SpeakerRecognitionDatasets/eer/'));
 
 %scorePath='../cnn_scores/usingBulbul/_cnnModel2_keepProb_0.6_0.5_0.5lr0.0003/'
-%scorePath='../svm_scores/_cnnModel1_keepProb_0.1_0.2_0.2/usingTrain_svmPenalty_1e-05/'
+%scorePath='/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/model1_max1000epochs/keep_0.1_0.2_0.3_cqt_spec/predictions/'
+scorePath='/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/model1_max100epochs_16batch/keep_0.1_0.2_0.3_mag_spec/predictions/'
 
-scorePath = '../svm_scores/usingBulbul_keepProb_0.6_0.5_0.5lr0.0003/usingTrain_svmPenalty_1e-05/'
 
 %%
 disp('Computing EER using training set');

@@ -31,11 +31,11 @@ def trainCNN_on_trainData():
     activation = 'mfm'  #choose activation: mfm,elu, relu, mfsoftmax, tanh ?
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
-    batch_size = 32
-    epochs = 1000
+    batch_size = 16     #32
+    epochs = 200        #1000
     
     # Regularizer parameters
-    use_lr_decay=False        #set this flag for LR decay
+    
     wDecayFlag = False         #whether to perform L2 weight decay or not
     lossPenalty = 0.001       # Using lambda=0.001 .
     applyBatchNorm = False    
@@ -54,8 +54,10 @@ def trainCNN_on_trainData():
     
     architectures = [1]
     trainingSize = [1]   #in seconds
-    lr= 0.0001
-           
+    
+    use_lr_decay=True        #set this flag for LR decay
+    learning_rates=[0.0001, 0.001]       #0.0001
+    
     targets=2
            
     #specType='mag_spec'     #lets try loading mag_spec    
@@ -84,12 +86,7 @@ def trainCNN_on_trainData():
     fftSize=512
     
     for specType in inputTypes:
-               
-        #if specType == 'mel_spec' or specType == 'cqt_spec':            
-        #    fftSize=512
-        #else:            
-        #    fftSize=256
-                
+                               
         #print('Now loading the data with FFT size: ', fftSize)
         outPath = spectrogramPath +specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
         mean_std_file = outPath+'train/mean_std.npz'
@@ -127,18 +124,18 @@ def trainCNN_on_trainData():
 
         for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
-            #penalty=0.001  #this is not used thought at the moment
+            penalty=0.001  #this is not used thought at the moment
             
-            for penalty in lambdas:
+            for lr in learning_rates:
             #for targets in target_list:
                                                 
-                hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)#+'_targets'+str(targets)
+                hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)+'_Lr'+str(lr)
                 
-                log_dir = tensorboardPath+ '/model1_max1000epochs/'+ hyp_str
-                model_save_path = modelPath + '/model1_max1000epochs/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_max200epochs_16batch_LrDecay/'+ hyp_str
+                model_save_path = modelPath + '/model1_max200epochs_16batch_LrDecay/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
-                figDirectory = model_save_path        
+                figDirectory = model_save_path   
                 makeDirectory(model_save_path)
                                                 
                 tLoss,vLoss,tAcc,vAcc=model.train(specType,architecture,fftSize,padding,duration,t_data,t_labels,
@@ -151,11 +148,3 @@ def trainCNN_on_trainData():
                 #plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
                         
 trainCNN_on_trainData()
-
-'''
-TODO:
-Before running the full model, first test with 1 epoch to ensure that the inside-code feature extraction and scoring pipeline is working well. Once it is okay, run these models in full epochs of 2000 !!
-'''
-
-# TODAY
-# 1. Reextract mel-spectrogram

@@ -163,7 +163,14 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             f = 513
         elif fftSize == 2048: 
             f = 1025
-                
+            
+    else:  # This will have all the hand crafted feature types
+        concatenate=False
+        if concatenate:
+            f = 80      # when two types of features are concatenated (eg CQCC+SCMC)
+        else:
+            f = 40      # just the delta+acceleration (40 dimensional)    
+                    
     input_data = tf.placeholder(tf.float32, [None,t, f,1])  #make it 4d tensor
     true_labels = tf.placeholder(tf.float32, [None,num_classes], name = 'y_input')
 
@@ -243,8 +250,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
     
     logfile = open(log_file, 'a')   #move it inside loop
     logfile.write('Starting CNN model training at : '+str(datetime.now())+'\n')
-    logfile.flush()
-    
+        
     #logfile.close()
     
     #print('Starting CNN model training at : '+str(datetime.now()))
@@ -313,8 +319,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             sess.run(train_step, feed_dict={input_data:data, true_labels:labels,keep_prob1:drop1, 
                                             keep_prob2:drop2,keep_prob3:drop3,tst:False,itr:i,eps:epsilon,lr:learning_rate})
             
-            #print('      Parameter updates (optimization) finished using batch ' + str(j+1) + '......')
-
+            
             # Occasionally write training summaries. Enable this to view stuffs in TensorBoard !
             if j%display_step==0:                                                
                 batch_summary = sess.run(merged_summary,feed_dict={input_data: data, true_labels: labels,
@@ -322,8 +327,8 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
                 train_writer.add_summary(batch_summary,global_step=m)
                 m+=1                            
 
-            # We test model parameter on validation data when counter = validateNow (halfway total_batches)    
-            if counter == validateNow:     
+            # We test model parameter on validation data when counter = validateNow (halfway total_batches)             
+            if int(counter) == int(validateNow):     
                 counter=0   #reset counter
                 #logfile = open(log_file, 'a')
                 
@@ -344,12 +349,14 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             
                     #print('Shape of weights in first conv layer:', w[0].shape) #(3, 257, 1, 128)
                     #print('Printing few weigths of the first conv layer', w[0][0][0][0:20])
-                    print('\nPrinting the CE loss of every samples in this batch \n', loss2)
+                    print('\nPrinting the CE loss of every samples in batch:  ', j+1)
+                    print(loss2)
+                    
                     batch_mean=sess.run(tf.reduce_mean(loss2))
                     print('\nAvg batch CE loss = ', batch_mean)
                     print('\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n')
                     
-                    logfile.write('******************************************************'+'\n\n')
+                    logfile.write('******************************************************'+'\n')
                     logfile.write("\nEpoch " +str(epoch)+", avg training BATCH loss = "+"{:.5f}".format(batch_mean)+'\n') 
                                         
                 
@@ -402,30 +409,29 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
                     logfile.write("The Epoch " +str(epoch)+", has training Avg CE loss = "+"{:.5f}".format(avg_loss)+'\n')
                     logfile.write('******************************************************'+'\n\n')
                     '''
-                    
-            
+                                
                 else:
                     # The loss_tracker keeps track of whether there has been any improvement in validation loss
-                    # over last N epochs. If not stop training loop !! Early stopping !            
-                    
+                    # over last N epochs. If not stop training loop !! Early stopping !                                
                     loss_tracker += 1
                     
-                # Lets close after each update on logfile (to enable me to see how its going)
-                # there might be better way to do this ?
-                
-                logfile.write('******************************************************'+'\n')
-                
-                #logfile.close()
-                logfile.flush()
+                # Reduce Learning Rate                
+                if loss_tracker > 14 and val_loss > best_validation_loss:
+                    if use_lr_decay:
+                        print('\nwe now halve the lr as val_loss did not improve over 15 epochs..')
+                        learning_rate = float(learning_rate/2)
+                        logfile.write("%%% In Epoch " +str(epoch)+", LR is reduced. New LR = "+"{:.5f}".format(learning_rate))
+                        loss_tracker=0
+                    
+                # Flush out information to the file    
+                logfile.flush()            
                     
                 # We reduce learning rate only three times
                 #if loss_tracker > 50 and val_loss > best_validation_loss:
                 #    print('Validation loss did not improve in last 50 epochs. We abort training loop.')
                 #    logfile.write("Validation loss did not improve over last 50 Epochs. We abort training loop..." + '\n')
                 #    break                                
-                
-                
-                                
+                                                                
                         
             # added for batch norm
             #if applyBatchNorm:
@@ -545,6 +551,11 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
         #    print('Validation loss did not improve in last 50 epochs. We abort training loop.')
         #    logfile.write("Validation loss did not improve over last 50 Epochs. We abort training loop..." + '\n')
         #    break
+        
+    
+    # Finally before closing the session, compute the loss on the training dataset ?
+    # I think it will take too much time
+            
         
     #logfile = open(log_file, 'a')
     logfile.write('Optimization finished at : '+str(datetime.now())+'\n')

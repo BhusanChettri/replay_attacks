@@ -51,8 +51,14 @@ def cnnModel1(input_type,trainSize,input_placeholder,activation,init,targets,fft
         elif fftSize == 1024:
             f = 513
         elif fftSize == 2048: 
-            f = 1025   
-            
+            f = 1025
+    else:
+        concatenate=False
+        if concatenate:
+            f = 80      # when two types of features are concatenated (eg CQCC+SCMC)
+        else:
+            f = 40      # just the delta+acceleration (40 dimensional)    
+                        
     weight_list = list()
     activation_list = list()
     bias_list = list()

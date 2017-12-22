@@ -46,34 +46,34 @@ def compute_spectrogram(input_type,filename,fft_size=512, win_size=512, hop_size
         if audio_length < 1.0 :
             minimum_length=1.0
             
-        elif audio_length > 1.0 and audio_length < 2.0:   #between 1-2 seconds
+        elif audio_length >= 1.0 and audio_length < 2.0:   #between 1-2 seconds
             minimum_length=2.0
             
-        elif audio_length > 2.0 and audio_length < 3.0:   #between 2-3 seconds
+        elif audio_length >= 2.0 and audio_length < 3.0:   #between 2-3 seconds
             minimum_length=3.0
             
-        elif audio_length > 3.0 and audio_length < 4.0:   #between 3-4 seconds
+        elif audio_length >= 3.0 and audio_length < 4.0:   #between 3-4 seconds
             minimum_length=4.0
             
-        elif audio_length > 4.0 and audio_length < 5.0:   #between 4-5 seconds
+        elif audio_length >= 4.0 and audio_length < 5.0:   #between 4-5 seconds
             minimum_length=5.0
             
-        elif audio_length > 5.0 and audio_length < 6.0:   #between 4-5 seconds
+        elif audio_length >= 5.0 and audio_length < 6.0:   #between 4-5 seconds
             minimum_length=6.0
             
-        elif audio_length > 6.0 and audio_length < 7.0:   #between 6-7 seconds
+        elif audio_length >= 6.0 and audio_length < 7.0:   #between 6-7 seconds
             minimum_length=7.0
             
-        elif audio_length > 7.0 and audio_length < 8.0:   #between 7-8 seconds
+        elif audio_length >= 7.0 and audio_length < 8.0:   #between 7-8 seconds
             minimum_length=8.0
             
-        elif audio_length > 8.0 and audio_length < 9.0:   #between 8-9 seconds
+        elif audio_length >= 8.0 and audio_length < 9.0:   #between 8-9 seconds
             minimum_length=9.0
             
-        elif audio_length > 9.0 and audio_length < 10.0:   #between 9-10 seconds
+        elif audio_length >= 9.0 and audio_length < 10.0:   #between 9-10 seconds
             minimum_length=10.0
             
-        elif audio_length > 10.0 and audio_length < 11.0:   #between 10-11 seconds
+        elif audio_length >= 10.0 and audio_length < 11.0:   #between 10-11 seconds
             minimum_length=11.0        
         
         #print('Original length and new length = %.2f,%.2f' %(audio_length,minimum_length))

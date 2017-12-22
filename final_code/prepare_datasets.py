@@ -33,14 +33,14 @@ def make_data_mag_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    #print('Preparing the training data')
-    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the training data')
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
 
     # Prepare Validation data
-    #print('Preparing the validation data')
-    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the validation data')
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
     
     # Prepare test data
     print('Preparing the test data')
@@ -70,14 +70,14 @@ def make_data_mel_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    #print('Preparing the training data')
-    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the training data')
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
 
     # Prepare Validation data
-    #print('Preparing the validation data')
-    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the validation data')
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
     
     # Prepare test data
     print('Preparing the test data')
@@ -111,21 +111,51 @@ def make_data_cqt_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    #print('Preparing the training data')
-    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the training data')
+    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
 
     # Prepare Validation data
-    #print('Preparing the validation data')
-    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-    #             augment,save)
+    print('Preparing the validation data')
+    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+                 augment,save)
     
     # Prepare test data
     print('Preparing the test data')
     prepare_data(basePath,'test',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
     augment,save)        
+
     
-make_data_mag_spectrogram()
-make_data_mel_spectrogram()
-make_data_cqt_spectrogram()
+def make_data_hand_crafted(featType):
+        
+    inputType='others'
+    dw=100    
+    ws=100
+    
+    outPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features_1sec_shift/' + featType +'/'            
+    basePath='/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/'
+                
+    # Prepare training data
+    print('Preparing the training data')
+    fPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features/' + featType + '/train.npz'
+    prepare_data(basePath,'train',outPath,inputType,data_window=dw,window_shift=ws,augment=True,featurePath=fPath)
+    
+    # Prepare validation data
+    print('Preparing the validation data')
+    fPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features/' + featType + '/dev.npz'
+    prepare_data(basePath,'dev',outPath,inputType,data_window=dw,window_shift=ws,augment=True,featurePath=fPath)
+
+    # Prepare test data
+    #print('Preparing the test data')
+    #fPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features/' + featType + '/eval.npz'
+    #prepare_data(basePath,'test',outPath,inputType,data_window=dw,window_shift=ws,augment=True,featurePath=fPath)        
+    
+    
+#make_data_mag_spectrogram()
+#make_data_mel_spectrogram()
+#make_data_cqt_spectrogram()
+
+featTypes=['IMFCC', 'LPCC', 'LFCC', 'RFCC', 'CQCC.60','MFCC'] #'SCMC'
+for feat in featTypes:
+    make_data_hand_crafted(feat)
 

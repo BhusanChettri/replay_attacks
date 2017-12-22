@@ -25,17 +25,16 @@ import audio
 import dataset
 import model
   
-def for_looping():
+def trainCNN_on_handcrafted_features():
 
     #CNN Training parameters
     activation = 'mfm'  #choose activation: mfm,elu, relu, mfsoftmax, tanh ?
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
-    batch_size = 32
-    epochs = 2000
+    batch_size = 16  #32
+    epochs = 200     #500      
     
-    # Regularizer parameters
-    use_lr_decay=False        #set this flag for LR decay
+    # Regularizer parameters    
     wDecayFlag = False         #whether to perform L2 weight decay or not
     lossPenalty = 0.001       # Using lambda=0.001 .
     applyBatchNorm = False    
@@ -47,49 +46,45 @@ def for_looping():
     b2=0.999
     epsilon=0.1
     momentum=0.95
-    #dropout1=1.0                 #for input to first FC layer  
-    #dropout2=1.0         #for intermediate layer input    
-    drops=[0.5]           # 50% dropout the inputs of FC layers
+    dropout1=0.1                  #for input to first FC layer
+    dropout2=0.2                  #for intermediate layer input    
+    drops=[0.3]                   # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
+    targets=2
     
     architectures = [1]
     trainingSize = [1]   #in seconds
-    lr= 0.0001
-           
-    targets=2
-           
-    #specType='mag_spec'     #lets try loading mag_spec    
-    #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
-    #inputTypes=['mag_spec']    # Not Run yet
-    #inputTypes=['cqt_spec']    # Not Run yet
     
-    inputTypes=['mel_spec','mag_spec','cqt_spec']   #CQT may throw error during scoring in model.py
+    use_lr_decay=True
+    learning_rates = [0.001, 0.008, 0.0001]    #0.01,
+    
+    # Note: LR =0.01 explodes badly. We get the huge cross entropy values we used to get before.
+    
+                                  
+    #inputTypes=['SCMC','CQCC','LFCC','LPCC','MFCC','RFCC']  #'IMFCC'    # i ran this in 1 kapoor   
+    inputTypes=['IMFCC']   # just see how this goes with lr decay
+    
     padding=True
     
     augment = True 
-    trainPercentage=0.25    #Each training epoch will see only 30% of the original data at random !
-    valPercentage=0.1
-    
-    if augment:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms_augmented/'
+    trainPercentage=1.0    #Each training epoch will see only 50% of the original data at random !
+    valPercentage=1.0   
+            
+    if augment:        
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features_1sec_shift/'
     else:
-        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/spectrograms/'        
+        spectrogramPath='/homes/bc305/myphd/stage2/deeplearning.experiment1/features/'        
             
     # Used following paths since I moved the scripts in git and used link so that code are synchronised
     tensorboardPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/tensorflow_log_dir/'
     modelPath = '/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/'
-                
-    #for duration in trainingSize:
+                    
     duration=1
+    fftSize=512
+    
     for specType in inputTypes:
-               
-        if specType == 'mel_spec' or specType == 'cqt_spec':            
-            fftSize=512
-        else:            
-            fftSize=256
-                
-        print('Now loading the data with FFT size: ', fftSize)
-        outPath = spectrogramPath +specType + '/' +str(fftSize)+ 'FFT/' + str(duration)+ 'sec/'
+                                      
+        outPath = spectrogramPath +specType + '/'
         mean_std_file = outPath+'train/mean_std.npz'
                 
         # Load training data, labels and perform norm
@@ -101,13 +96,20 @@ def for_looping():
         if not os.path.exists(mean_std_file):
             print('Computing Mean_std file ..')
             dataset.compute_global_norm(tD,mean_std_file)
-                
-               
-        # Load dev data, labels and perform norm
+            
+        # We will try utterance based norm later   
+        #tD = dataset.normalise_data(tD,mean_std_file,'utterance')    # utterance level      
+        tD = dataset.normalise_data(tD,mean_std_file,'global_mv')    # global
+                        
+        # Now take only 80% of the new augmented data to use for validation
+        # Just to save some time during training
+        #devD,devL = dataset.get_random_data(outPath+'dev/',batch_size,valPercentage)
         devD,devL = dataset.load_data(outPath+'dev/')
-        devL = dataset.get_labels_according_to_targets(devL, targets)        
-        assert(len(devD)==len(devL))
-                
+        devL = dataset.get_labels_according_to_targets(devL, targets)
+        assert(len(devD)==len(devL))                                
+                        
+        #devD = dataset.normalise_data(devD,mean_std_file,'utterance')
+        devD = dataset.normalise_data(devD,mean_std_file,'global_mv')                                
                 
         ### We are training on TRAIN set and validating on DEV set        
         t_data = tD
@@ -119,16 +121,13 @@ def for_looping():
 
         for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
-            #penalty=0.001  #this is not used thought at the moment
+            penalty=0.001
             
-            for penalty in lambdas:
-            #for targets in target_list:
+            for lr in learning_rates:                                               
+                hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)+'_lr_'+str(lr)
                 
-                #hyp_str ='cnnModel'+str(architecture)+'_keepProb_0.1_0.2_'+ str(dropout)+'_'+str(penalty)
-                hyp_str='arch'+str(architecture)+'_keep'+str(dropout)+'_'+str(specType)+'_targets'+str(targets)
-                
-                log_dir = tensorboardPath+ '/LOOP_TEMP/'+ hyp_str
-                model_save_path = modelPath + '/LOOP_TEMP/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_200max_handcrafted/'+ hyp_str
+                model_save_path = modelPath + '/model1_200max_handcrafted/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        
@@ -136,19 +135,11 @@ def for_looping():
                                                 
                 tLoss,vLoss,tAcc,vAcc=model.train(specType,architecture,fftSize,padding,duration,t_data,t_labels,
                                                   v_data,v_labels,activation,lr,use_lr_decay,epsilon,b1,b2,momentum,
-                                                  optimizer_type,dropout,dropout,dropout,model_save_path,log_dir,
+                                                  optimizer_type,dropout1,dropout2,dropout,model_save_path,log_dir,
                                                   logfile,wDecayFlag,penalty,applyBatchNorm,init_type,epochs,batch_size,
-                                                  targets,augment,trainPercentage,valPercentage)                                                                                                                                        
+                                                  targets,augment)#,trainPercentage,valPercentage)                                                                                                                                        
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')
-                plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
-                                          
-trainCNN_on_trainData()
-
-'''
-TODO:
-Before running the full model, first test with 1 epoch to ensure that the inside-code feature extraction and scoring pipeline is working well. Once it is okay, run these models in full epochs of 2000 !!
-'''
-
-# TODAY
-# 1. Reextract mel-spectrogram
+                #plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
+                        
+trainCNN_on_handcrafted_features()

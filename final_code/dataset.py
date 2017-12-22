@@ -158,6 +158,63 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield np.asarray(inputs)[excerpt], np.asarray(targets)[excerpt]
     
 #------------------------------------------------------------------------------------------------------------------------------
+def update_feature_matrix(data):    
+    
+    '''
+    This could be merged with update audio sample function in audio.py if I could do task of making the 
+    unified length in time after computing the spectrograms. In earlier case I was doing the unification 
+    at the sample level. But, with the handcrafted feature matrix it did not work. Need to be merged !!
+    '''
+           
+    audio_length = data.shape[0]   #matrix is txd
+        
+    if audio_length < 100:
+        minimum_length=100
+            
+    elif audio_length >= 100 and audio_length < 200:   #between 1-2 seconds
+        minimum_length=200
+            
+    elif audio_length >= 200 and audio_length < 300:   #between 2-3 seconds
+        minimum_length=300
+            
+    elif audio_length >= 300 and audio_length < 400:   #between 3-4 seconds
+        minimum_length=4.0
+            
+    elif audio_length >= 400 and audio_length < 500:   #between 4-5 seconds
+        minimum_length=500
+            
+    elif audio_length >= 500 and audio_length < 600:   #between 4-5 seconds
+        minimum_length=600
+            
+    elif audio_length >= 600 and audio_length < 700:   #between 6-7 seconds
+        minimum_length=700
+            
+    elif audio_length >= 700 and audio_length < 800:   #between 7-8 seconds
+        minimum_length=800
+            
+    elif audio_length >= 800 and audio_length < 900:   #between 8-9 seconds
+        minimum_length=900
+            
+    elif audio_length >= 900 and audio_length < 1000:   #between 9-10 seconds
+        minimum_length=1000
+            
+    elif audio_length >= 1000 and audio_length < 1100:   #between 10-11 seconds
+        minimum_length=1100
+        
+    else:
+        minimum_length=100
+        print('Default minimum_length ...')
+        
+    print('Original length and new length = %.2f,%.2f' %(audio_length,minimum_length))
+        
+    last_frame=data[audio_length-1]
+    
+    while audio_length<minimum_length:     
+        data = np.vstack((data,last_frame))
+        audio_length=data.shape[0]
+                        
+    return data
+
 
 def load_data(file):
     #if augment
@@ -295,10 +352,65 @@ def spectrograms(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_s
     
     # We always save the spectrograms, coz we run different experiments on same data.
     # While loading spectrogram check if its augmented one or simple one    
+
+def other_features(input_type,data_list,labelFile,savePath,fft_size,win_size,hop_size,duration,data_window=100,
+                 window_shift=10,augment=True,save=True,minimum_length=1):
+    '''
+    Merge this function and spectrograms. Can replace spectrogram function #1
+    '''
+    
+    from audio import compute_spectrogram              
+
+    spectrograms = list()
+    labels = list()
+    
+    if input_type == 'others':
+        #load the npz file which in this case is data_list
+        print('Loading the features..')
+        spectrograms= np.load(data_list)['features']
+        print('Length is: ',len(spectrograms))
+        
+        # Make these features unified across time dimension
+        spectrograms = [update_feature_matrix(matrix) for matrix in spectrograms]
+        
+        
+    else:
+        print('Computing the ' + input_type + ' spectrograms !!')    
+        with open(data_list, 'r') as f:
+            spectrograms=[compute_spectrogram(input_type,file.strip(),fft_size,win_size,hop_size,
+                                              duration,augment,minimum_length) for file in f]
+                        
+    # Get the labels into a list and save it along with the spectrograms
+    with open(labelFile,'r') as f:        
+        labels = [line.strip() for line in f]     
+                        
+    if augment:
+        new_data = list()
+        new_labels = list()
+        
+        assert(len(labels) == len(spectrograms))
+        print('Now performing augmentation using sliding window mechanism on original specs/features .... ')
+        
+        for i in range(len(spectrograms)):    
+            d,l = augment_data(spectrograms[i],labels[i],data_window,input_type,window_shift)            
+            new_data.extend(d) # extend the list rather than adding it into a new list
+            new_labels.extend(l)
+            
+        spectrograms = new_data
+        labels = new_labels
+    
+    if save:  
+        from helper import makeDirectory
+        makeDirectory(savePath)
+        outfile = savePath+'/spec'
+        with open(outfile,'w') as f:
+            np.savez(outfile, spectrograms=spectrograms, labels=labels)
+        print('Finished computing features/spectrograms and saved inside: ', savePath)
+        
     
 def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
                  fs=16000,fft_size=512,win_size=512,hop_size=160,data_window=100,window_shift=10,
-                 augment=True,save=True,minimum_length=1): 
+                 augment=True,save=True,minimum_length=1,featurePath=None): 
         
     print('The spectrogram savepath is: ', outPath)
     
@@ -342,8 +454,10 @@ def prepare_data(basePath,dataType,outPath,inputType='mag_spec',duration=3,
     assert(labelPath != None)
     assert(savePath != None)
         
-    if inputType == 'log_fbank':        
-        some_function(input_type, audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
+    if inputType == 'others':
+        audio_list = featurePath    #Need to pass this from top !!
+        
+        other_features(inputType,featurePath,labelPath,savePath,fft_size,win_size,hop_size,duration,
                       data_window,window_shift,augment,save,minimum_length)
     else:        
         spectrograms(inputType,audio_list,labelPath,savePath,fft_size,win_size,hop_size,duration,
