@@ -185,7 +185,7 @@ def cnnModel2(input_type,trainSize,input_placeholder,activation,init,targets,fft
     bias_list = list()
     
     if activation=='mfm':
-        fc_input= f*8   #6448 #1*257*64 = 16448
+        fc_input= 13*17*8   #f*8   #6448 #1*257*64 = 16448
         in_conv2 = 8
         in_conv3 = 8
         in_conv4 = 8
@@ -194,13 +194,15 @@ def cnnModel2(input_type,trainSize,input_placeholder,activation,init,targets,fft
         in_outputLayer = 128
         
     else:
-        fc_input= f*16  #32896 # 1*257*128
+        fc_input= 13*17*16   #f*16  #32896 # 1*257*128
         in_conv2 = 16
         in_conv3 = 16
         in_conv4 = 16
         in_fc2 = 256
         in_fc3 = 256
         in_outputLayer = 256
+        
+    #flattened = tf.reshape(pool4, shape=[-1, 65*19*32])
     print('======================== CNN ARCHITECTURE ==============================\n')    
                                
     #Convolution layer1,2,3    
