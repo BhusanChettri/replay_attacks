@@ -40,7 +40,8 @@ def write_scores_to_file(prediction, after_decimal=5, outfile='prediction.txt'):
             #   spoof = 0.01
              
             score = np.log(gen) - np.log(spoof)
-            f.write("%.4f\n" % (score))                   
+            f.write(str(gen)+ ' '+ str(spoof) + ' '+ str(score)+ '\n')
+            #f.write("%.4f\n" % (score))
             
 def run_prediction(model_path,featType,dataType,protocal,inputPath,mean_std_file,outBase,batch_size=100,activation='elu',
                    init_type='xavier',targets=2,fftSize=256,architecture=2,duration=1,padding=True,n_model=None,
@@ -116,13 +117,13 @@ def get_scores_and_features(model_path,batch_size=100,init_type='xavier',activat
         run_prediction(model_path,feat,'train',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
                        init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)                
         
-        run_prediction(model_path,feat,'dev',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-                       init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
+        #run_prediction(model_path,feat,'dev',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
+        #               init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
         
         print('Now extracting on Eval set !')
     
-        run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
-                       init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
+        #run_prediction(model_path,feat,'eval',trainProtocal,inputPath,mean_std_file,outputPath,batch_size,activation,
+        #               init_type,targets,fftSize,architecture,duration,padding,n_model,specType,augment)
         
 #-----------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------

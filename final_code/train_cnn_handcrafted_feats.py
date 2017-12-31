@@ -31,7 +31,7 @@ def trainCNN_on_handcrafted_features():
     activation = 'mfm'  #choose activation: mfm,elu, relu, mfsoftmax, tanh ?
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
-    batch_size = 16  #32
+    batch_size = 32
     epochs = 200     #500      
     
     # Regularizer parameters    
@@ -45,10 +45,10 @@ def trainCNN_on_handcrafted_features():
     b1=0.9
     b2=0.999
     epsilon=0.1
-    momentum=0.95
-    dropout1=0.1                  #for input to first FC layer
-    dropout2=0.2                  #for intermediate layer input    
-    drops=[0.3]                   # 50% dropout the inputs of FC layers
+    momentum=0.95 #0.95
+    dropout1=0.5  #0.3                  #for input to first FC layer
+    dropout2=0.5  #0.3                  #for intermediate layer input    
+    drops=[0.5]                   # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
     targets=2
     
@@ -56,14 +56,17 @@ def trainCNN_on_handcrafted_features():
     trainingSize = [1]   #in seconds
     
     use_lr_decay=True
-    learning_rates = [0.001, 0.008, 0.0001]    #0.01,
+    learning_rates=[0.0022, 0.0008, 0.005, 0.0004]
+    #learning_rates=np.random.uniform(0.003,0.0005,10)    #Take randomly drawn lr from uniform distribution between 0.001-0.0001
+    #learning_rates=np.random.uniform(0.01,0.0001,10)
     
     # Note: LR =0.01 explodes badly. We get the huge cross entropy values we used to get before.
-    
-                                  
-    #inputTypes=['SCMC','CQCC','LFCC','LPCC','MFCC','RFCC']  #'IMFCC'    # i ran this in 1 kapoor   
-    inputTypes=['IMFCC']   # just see how this goes with lr decay
-    
+                                      
+    #inputTypes=['CQCC','LFCC','LPCC','MFCC','RFCC']  #'IMFCC'    # i ran this in 1 kapoor   
+
+    #inputTypes=['IMFCC', 'SCMC']   # this was running on kapoor 0
+    inputTypes=['RFCC','LFCC','SCMC','IMFCC']   # this is running on kapoor 1   
+
     padding=True
     
     augment = True 
@@ -119,15 +122,18 @@ def trainCNN_on_handcrafted_features():
         
         print('Training model on ', specType)
 
-        for dropout in drops:                  # dropout 1.0 and 0.5 to all inputs of DNN
+        for dropout in drops:                  # Just dropout 1.0 and 0.5 to all inputs of DNN
             architecture = architectures[0]
             penalty=0.001
             
             for lr in learning_rates:                                               
+                                
                 hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)+'_lr_'+str(lr)
+
+                print('Hyper-parameter string is: ', hyp_str) 
                 
-                log_dir = tensorboardPath+ '/model1_200max_handcrafted/'+ hyp_str
-                model_save_path = modelPath + '/model1_200max_handcrafted/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_120max_handcrafted_with_0.85Decay/'+ str(specType) + 'drops'+'/'+ hyp_str
+                model_save_path = modelPath + '/model1_120max_handcrafted_with_0.85Decay/'+ str(specType) +'drops'+'/'+ hyp_str
                 logfile = model_save_path+'/training.log'
                 
                 figDirectory = model_save_path        
@@ -140,6 +146,7 @@ def trainCNN_on_handcrafted_features():
                                                   targets,augment)#,trainPercentage,valPercentage)                                                                                                                                        
                 #plot_2dGraph('#Epochs', 'Avg CE Loss', tLoss,vLoss,'train_ce','val_ce', figDirectory+'/loss.png')
                 #plot_2dGraph('#Epochs', 'Avg accuracy', tAcc,vAcc,'train_acc','val_acc',figDirectory+'/acc.png')
-                #plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')
+                #plot_2dGraph('#Epochs', 'Val loss and accuracy', vLoss,vAcc,'val_loss','val_acc',figDirectory+'/v_ls_acc.png')   
                         
+
 trainCNN_on_handcrafted_features()

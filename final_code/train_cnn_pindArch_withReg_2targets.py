@@ -31,8 +31,8 @@ def trainCNN_on_trainData():
     activation = 'mfm'  #choose activation: mfm,elu, relu, mfsoftmax, tanh ?
     init_type='xavier'  #'truncated_normal' #'xavier'  #or 'truncated_normal'
 
-    batch_size = 16     #32
-    epochs = 200        #1000
+    batch_size = 32
+    epochs = 120        #1000
     
     # Regularizer parameters
     
@@ -49,23 +49,28 @@ def trainCNN_on_trainData():
     momentum=0.95
     dropout1=0.1                  #for input to first FC layer
     dropout2=0.2                  #for intermediate layer input    
-    drops=[0.3]                   # 50% dropout the inputs of FC layers
+    drops=[0.4]                   # 50% dropout the inputs of FC layers
     lambdas = [0.0005, 0.001]
     
     architectures = [1]
     trainingSize = [1]   #in seconds
     
     use_lr_decay=True        #set this flag for LR decay
-    learning_rates=[0.0001, 0.001]       #0.0001
+    learning_rates=[0.0008,0.0006,0.0004,0.0001] 
+    #learning_rates=[0.0001, 0.001]       #0.0001
+    #learning_rates=np.random.uniform(0.003,0.0005,10)
+    #learning_rates=np.random.uniform(0.01,0.0001,10)
+    #learning_rates=np.linspace(0.001,0.01,10)
+    #learning_rates=[0.0002, 0.0003, 0.0004, 0.0005, 0.0006,0.0007,0.0008, 0.0009]
     
     targets=2
            
     #specType='mag_spec'     #lets try loading mag_spec    
     #inputTypes=['mel_spec'] #'mag_spec'  #'cqt_spec'   ## Running on Hepworth !    
-    #inputTypes=['mag_spec']    # Not Run yet
+    inputTypes=['mag_spec']    # Not Run yet
     #inputTypes=['cqt_spec']    # Not Run yet
     
-    inputTypes=['mag_spec','cqt_spec','mel_spec']
+    #inputTypes=['mag_spec','cqt_spec','mel_spec']
     padding=True
     
     augment = True 
@@ -131,11 +136,11 @@ def trainCNN_on_trainData():
                                                 
                 hyp_str='keep_'+str(dropout1)+'_'+str(dropout2)+'_'+str(dropout)+'_'+str(specType)+'_Lr'+str(lr)
                 
-                log_dir = tensorboardPath+ '/model1_max200epochs_16batch_LrDecay/'+ hyp_str
-                model_save_path = modelPath + '/model1_max200epochs_16batch_LrDecay/'+ hyp_str
+                log_dir = tensorboardPath+ '/model1_max120epochs_32batch_with_0.85Decay/' +str(specType)+ '/' + hyp_str
+                model_save_path = modelPath + '/model1_max120epochs_32batch_with_0.85Decay/'+str(specType) + '/' + hyp_str
                 logfile = model_save_path+'/training.log'
                 
-                figDirectory = model_save_path   
+                figDirectory = model_save_path
                 makeDirectory(model_save_path)
                                                 
                 tLoss,vLoss,tAcc,vAcc=model.train(specType,architecture,fftSize,padding,duration,t_data,t_labels,

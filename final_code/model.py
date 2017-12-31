@@ -201,7 +201,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
         if architecture == 1:           
             _, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel1(input_type,trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         elif architecture == 2:
-            _, model_prediction,network_weights,activations,biases= nn_b.cnnModel1(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
+            _, model_prediction,network_weights,activations,biases= nn_architecture.cnnModel2(input_type,trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         elif architecture == 3:
             _, model_prediction,network_weights,activations,biases= nn_b.cnnModel2(trainSize,input_data, act,init_type,num_classes,fftSize,padding,keep_prob1,keep_prob2,keep_prob3)
         elif architecture == 5:
@@ -416,11 +416,14 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
                     loss_tracker += 1
                     
                 # Reduce Learning Rate                
-                if loss_tracker > 14 and val_loss > best_validation_loss:
+                if loss_tracker >40  and val_loss > best_validation_loss:
                     if use_lr_decay:
-                        print('\nwe now halve the lr as val_loss did not improve over 15 epochs..')
-                        learning_rate = float(learning_rate/2)
-                        logfile.write("%%% In Epoch " +str(epoch)+", LR is reduced. New LR = "+"{:.5f}".format(learning_rate))
+                        #print('\nwe now halve the lr as val_loss did not improve over 15 epochs..')
+                        #learning_rate = float(learning_rate/2)
+                        print('\nVal loss did not improve over 20 epochs, we now decay the LR by 0.85..')
+                        learning_rate = float(learning_rate*0.85)
+
+                        logfile.write("%%% In Epoch " +str(epoch)+", LR is reduced. New LR = "+"{:.9f}".format(learning_rate))
                         loss_tracker=0
                     
                 # Flush out information to the file    
@@ -570,7 +573,7 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
     later on. Also note that we do utterance based + global mv normalization 
     '''
     
-    testonFly=True
+    testonFly=False
     
     if testonFly:
         duration=trainSize    

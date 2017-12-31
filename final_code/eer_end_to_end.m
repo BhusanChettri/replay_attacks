@@ -11,7 +11,6 @@ addpath(genpath('/import/c4dm-datasets/SpeakerRecognitionDatasets/eer/'));
 %scorePath='/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/model1_max1000epochs/keep_0.1_0.2_0.3_cqt_spec/predictions/'
 scorePath='/homes/bc305/myphd/stage2/deeplearning.experiment1/CNN3/models_augmented/model1_max100epochs_16batch/keep_0.1_0.2_0.3_mag_spec/predictions/'
 
-
 %%
 disp('Computing EER using training set');
 trainLabels=importdata('/import/c4dm-datasets/SpeakerRecognitionDatasets/ASVSpoof2017/labels/train.lab');
@@ -37,6 +36,7 @@ scores=importdata(strcat(scorePath, '/eval_prediction.txt'));
 eer_eval = get_eer(scores,evalLabels);
 disp('EER values on Eval set');
 eer_eval
+
 
 %% Write the results to the file
 %writeToFile(eer_train, saveFilename, 'On Training set');

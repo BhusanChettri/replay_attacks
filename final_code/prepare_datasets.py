@@ -33,14 +33,14 @@ def make_data_mag_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
     print('Preparing the test data')
@@ -70,14 +70,14 @@ def make_data_mel_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
     print('Preparing the test data')
@@ -111,14 +111,14 @@ def make_data_cqt_spectrogram():
     outPath = spectrogramPath+ inputType + '/'+str(fft_size)+ 'FFT/' + str(duration)+ 'sec/'
                 
     # Prepare training data
-    print('Preparing the training data')
-    prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the training data')
+    #prepare_data(basePath,'train',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
 
     # Prepare Validation data
-    print('Preparing the validation data')
-    prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
-                 augment,save)
+    #print('Preparing the validation data')
+    #prepare_data(basePath,'dev',outPath,inputType,duration,fs,fft_size,win_size,hop_size,data_window,window_shift,
+    #             augment,save)
     
     # Prepare test data
     print('Preparing the test data')
@@ -151,11 +151,11 @@ def make_data_hand_crafted(featType):
     #prepare_data(basePath,'test',outPath,inputType,data_window=dw,window_shift=ws,augment=True,featurePath=fPath)        
     
     
-#make_data_mag_spectrogram()
-#make_data_mel_spectrogram()
-#make_data_cqt_spectrogram()
+make_data_mag_spectrogram()
+make_data_mel_spectrogram()
+make_data_cqt_spectrogram()
 
-featTypes=['IMFCC', 'LPCC', 'LFCC', 'RFCC', 'CQCC.60','MFCC'] #'SCMC'
-for feat in featTypes:
-    make_data_hand_crafted(feat)
+#featTypes=['IMFCC', 'LPCC', 'LFCC', 'RFCC', 'CQCC.60','MFCC'] #'SCMC'
+#for feat in featTypes:
+#    make_data_hand_crafted(feat)
 
