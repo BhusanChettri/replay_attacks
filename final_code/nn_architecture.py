@@ -219,8 +219,9 @@ def cnnModel2(input_type,trainSize,input_placeholder,activation,init,targets,fft
     conv3,w3,b3 = conv_layer(pool2, [3,10,in_conv3,16], [16], [1,1,1,1],'conv3', padding,activation,init)
     weight_list.append(w3)
     bias_list.append(b3)    
-    print('Conv3 ', conv3)
+    #print('Conv3 ', conv3)
     pool3 = maxPool2x2(conv3, [1,2,2,1], [1,2,2,1])
+    print('pool3 shape: ', pool3)
     
     if input_type == 'cqt_spec':
         time_dim = 32

@@ -316,6 +316,9 @@ def train(input_type,architecture,fftSize,padding,trainSize,train_data, train_la
             
             data, labels = next(batch_generator)                          
             data = dataset.reshape_minibatch(data)                        
+            print('***************')
+            print(data[0].shape)
+
             sess.run(train_step, feed_dict={input_data:data, true_labels:labels,keep_prob1:drop1, 
                                             keep_prob2:drop2,keep_prob3:drop3,tst:False,itr:i,eps:epsilon,lr:learning_rate})
             

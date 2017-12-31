@@ -98,6 +98,8 @@ def trainCNN_on_trainData():
                 
         # Load training data, labels and perform norm
         tD,tL = dataset.load_data(outPath+'train/')
+        print(tD[0].shape)
+
         tL = dataset.get_labels_according_to_targets(tL, targets)
         
         assert(len(tD)==len(tL))
